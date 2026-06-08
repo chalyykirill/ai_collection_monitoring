@@ -1,0 +1,16 @@
+# MacOS
+.DS_Store
+
+# Python
+__pycache__/
+*.pyc
+
+# Артефакты запусков
+outputs/
+
+# Если появится виртуальное окружение
+.venv/
+venv/
+
+# VS Code (по желанию)
+.vscode/settings.json
