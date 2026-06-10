@@ -19,37 +19,42 @@ CHANNEL_METRICS = [
 
 TOOL_DESCRIPTIONS = {
     "check_known_event_calendar": (
-        "Checks event_type and is_expected_event on the event date. Use first "
-        "for bank_unavailable_day and credit_card_batch_inflow."
+        "Проверяет event_type и is_expected_event на дату события. "
+        "Используется в первую очередь для bank_unavailable_day и "
+        "credit_card_batch_inflow."
     ),
     "check_product_mix_shift": (
-        "Calculates the product share in total process_monitoring volume and "
-        "compares current and previous dates."
+        "Рассчитывает долю продукта в общем объеме process_monitoring и "
+        "сравнивает текущую и предыдущую даты."
     ),
     "check_target_rate_shift": (
-        "Compares current and previous target_rate for the alert group slice."
+        "Проверяет изменение target_rate между текущим и предыдущим периодом "
+        "для среза alert group."
     ),
     "check_psi_shift": (
-        "Checks changes in psi_score and psi_features against warning and "
-        "critical thresholds."
+        "Проверяет изменения psi_score и psi_features относительно порогов "
+        "warning и critical."
     ),
     "check_missing_rate_growth": (
-        "Checks growth of feature_missing_rate and score_missing_rate."
+        "Проверяет рост feature_missing_rate и score_missing_rate."
     ),
     "check_empty_feature_vector_growth": (
-        "Checks growth of empty_feature_vector_share."
+        "Проверяет рост empty_feature_vector_share."
     ),
     "check_score_distribution_shift": (
-        "Checks avg_score, median_score, p90_score and high_risk_share shifts."
+        "Проверяет сдвиги avg_score, median_score, p90_score и "
+        "high_risk_share."
     ),
     "check_optimizer_reject_share": (
-        "Checks reject_share and approved/rejected optimizer volumes."
+        "Проверяет reject_share и объемы одобренных и отклоненных решений "
+        "оптимизатора."
     ),
     "check_communication_mix_shift": (
-        "Checks communication channel shares and unknown communication share."
+        "Проверяет доли каналов коммуникаций и "
+        "unknown_communication_share."
     ),
     "check_volume_shift": (
-        "Checks relative changes in cnt_clients and cnt_scored."
+        "Проверяет относительные изменения cnt_clients и cnt_scored."
     ),
 }
 
@@ -116,7 +121,7 @@ def _missing_rows_result(tool_name: str) -> dict:
     return {
         "tool_name": tool_name,
         "status": "warning",
-        "finding": "Current or previous monitoring slice was not found.",
+        "finding": "Текущий или предыдущий срез мониторинга не найден.",
         "evidence": {},
         "supports_hypothesis": False,
     }
@@ -164,9 +169,13 @@ def check_known_event_calendar(
         "tool_name": tool_name,
         "status": "ok" if confirmed else "warning",
         "finding": (
-            f"Known event {event_type} is confirmed by is_expected_event=true."
+            f"Известное событие {event_type} подтверждено признаком "
+            "is_expected_event=true."
             if confirmed
-            else f"Expected-event confirmation is absent for {event_type}."
+            else (
+                f"Для события {event_type} отсутствует подтверждение "
+                "признаком is_expected_event=true."
+            )
         ),
         "evidence": {
             "event_type": event_type,
@@ -210,7 +219,8 @@ def check_product_mix_shift(
         "tool_name": tool_name,
         "status": status,
         "finding": (
-            f"{product} share changed by {delta * 100:.2f} percentage points."
+            f"Доля продукта {product} изменилась на "
+            f"{delta * 100:.2f} п.п."
         ),
         "evidence": {
             "product": product,
@@ -242,7 +252,7 @@ def check_target_rate_shift(
     return {
         "tool_name": tool_name,
         "status": status,
-        "finding": f"Target rate changed by {delta * 100:.2f} pp.",
+        "finding": f"target_rate изменился на {delta * 100:.2f} п.п.",
         "evidence": evidence,
         "supports_hypothesis": status != "ok",
     }
@@ -269,7 +279,7 @@ def check_psi_shift(
     return {
         "tool_name": tool_name,
         "status": status,
-        "finding": f"PSI metrics have overall status {status}.",
+        "finding": f"PSI-метрики имеют общий статус {status}.",
         "evidence": metrics,
         "supports_hypothesis": status != "ok",
     }
@@ -300,7 +310,7 @@ def check_missing_rate_growth(
     return {
         "tool_name": tool_name,
         "status": status,
-        "finding": f"Missing-rate metrics have overall status {status}.",
+        "finding": f"Метрики пропусков имеют общий статус {status}.",
         "evidence": metrics,
         "supports_hypothesis": status != "ok",
     }
@@ -327,8 +337,8 @@ def check_empty_feature_vector_growth(
         "tool_name": tool_name,
         "status": status,
         "finding": (
-            "Empty feature vector share changed by "
-            f"{delta * 100:.2f} pp."
+            "empty_feature_vector_share изменился на "
+            f"{delta * 100:.2f} п.п."
         ),
         "evidence": evidence,
         "supports_hypothesis": status != "ok",
@@ -361,7 +371,7 @@ def check_score_distribution_shift(
     return {
         "tool_name": tool_name,
         "status": status,
-        "finding": f"Score distribution has overall status {status}.",
+        "finding": f"Распределение score имеет общий статус {status}.",
         "evidence": metrics,
         "supports_hypothesis": status != "ok",
     }
@@ -398,7 +408,7 @@ def check_optimizer_reject_share(
     return {
         "tool_name": tool_name,
         "status": status,
-        "finding": f"Optimizer rejection metrics have status {status}.",
+        "finding": f"Метрики отказов оптимизатора имеют статус {status}.",
         "evidence": metrics,
         "supports_hypothesis": status != "ok",
     }
@@ -427,7 +437,7 @@ def check_communication_mix_shift(
     return {
         "tool_name": tool_name,
         "status": status,
-        "finding": f"Communication mix has overall status {status}.",
+        "finding": f"Микс коммуникаций имеет общий статус {status}.",
         "evidence": metrics,
         "supports_hypothesis": status != "ok",
     }
@@ -459,7 +469,7 @@ def check_volume_shift(
     return {
         "tool_name": tool_name,
         "status": status,
-        "finding": f"Volume metrics have overall status {status}.",
+        "finding": f"Метрики объема имеют общий статус {status}.",
         "evidence": metrics,
         "supports_hypothesis": status != "ok",
     }
@@ -484,4 +494,3 @@ def get_available_tools() -> list[dict[str, str]]:
         {"tool_name": name, "description": TOOL_DESCRIPTIONS[name]}
         for name in TOOL_REGISTRY
     ]
-

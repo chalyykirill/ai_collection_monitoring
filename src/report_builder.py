@@ -16,6 +16,22 @@ INCIDENT_CLASSIFICATIONS = {
     "needs_manual_review",
 }
 
+DISPLAY_LABELS = {
+    "ok": "норма",
+    "warning": "предупреждение",
+    "critical": "критический",
+    "info": "информация",
+    "low": "низкий",
+    "medium": "средний",
+    "high": "высокий",
+    "expected_event": "ожидаемое событие",
+    "expected_process_feature": "ожидаемая особенность процесса",
+    "potential_incident": "потенциальный инцидент",
+    "needs_manual_review": "требуется ручная проверка",
+    "True": "да",
+    "False": "нет",
+}
+
 
 def _escape(value: Any) -> str:
     return html.escape(str(value if value is not None else ""))
@@ -23,13 +39,14 @@ def _escape(value: Any) -> str:
 
 def _list_html(items: list[Any] | None) -> str:
     if not items:
-        return '<p class="muted">No data</p>'
+        return '<p class="muted">Нет данных</p>'
     return "<ul>" + "".join(f"<li>{_escape(item)}</li>" for item in items) + "</ul>"
 
 
 def _badge(value: str, prefix: str = "") -> str:
     css_value = value.replace("_", "-")
-    label = f"{prefix}{value}" if prefix else value
+    display_value = DISPLAY_LABELS.get(value, value)
+    label = f"{prefix}{display_value}" if prefix else display_value
     return f'<span class="badge {css_value}">{_escape(label)}</span>'
 
 
@@ -43,7 +60,7 @@ def _alert_summary(alert: dict[str, Any]) -> str:
 
 def _related_alerts_html(alerts: list[dict[str, Any]]) -> str:
     if not alerts:
-        return '<p class="muted">No related alerts</p>'
+        return '<p class="muted">Связанные алерты отсутствуют</p>'
     rows = "".join(
         "<tr>"
         f"<td>{_escape(alert.get('metric'))}</td>"
@@ -55,8 +72,9 @@ def _related_alerts_html(alerts: list[dict[str, Any]]) -> str:
         for alert in alerts
     )
     return (
-        "<table><thead><tr><th>Metric</th><th>Severity</th>"
-        "<th>Current</th><th>Delta</th><th>Description</th></tr></thead>"
+        "<table><thead><tr><th>Метрика</th><th>Критичность</th>"
+        "<th>Текущее значение</th><th>Изменение</th>"
+        "<th>Описание</th></tr></thead>"
         f"<tbody>{rows}</tbody></table>"
     )
 
@@ -64,7 +82,7 @@ def _related_alerts_html(alerts: list[dict[str, Any]]) -> str:
 def _rag_sources_html(context: dict[str, Any] | None) -> str:
     chunks = (context or {}).get("chunks", [])
     if not chunks:
-        return '<p class="muted">RAG context was not found.</p>'
+        return '<p class="muted">RAG-контекст не найден.</p>'
     return "".join(
         '<div class="source">'
         f"<strong>{_escape(chunk.get('source'))}</strong> "
@@ -77,7 +95,7 @@ def _rag_sources_html(context: dict[str, Any] | None) -> str:
 
 def _charts_html(chart_paths: list[str]) -> str:
     if not chart_paths:
-        return '<p class="muted">Charts are unavailable.</p>'
+        return '<p class="muted">Графики недоступны.</p>'
     return '<div class="charts">' + "".join(
         (
             '<figure><img loading="lazy" '
@@ -96,13 +114,13 @@ def _tool_results_html(tool_results: list[dict[str, Any]]) -> str:
         f"<td>{_escape(result.get('tool_name'))}</td>"
         f"<td>{_badge(str(result.get('status', 'unknown')))}</td>"
         f"<td>{_escape(result.get('finding'))}</td>"
-        f"<td>{_escape(result.get('supports_hypothesis'))}</td>"
+        f"<td>{_escape(DISPLAY_LABELS.get(str(result.get('supports_hypothesis')), str(result.get('supports_hypothesis'))))}</td>"
         "</tr>"
         for result in tool_results
     )
     return (
-        "<table><thead><tr><th>Tool</th><th>Status</th>"
-        "<th>Finding</th><th>Supports hypothesis</th></tr></thead>"
+        "<table><thead><tr><th>Инструмент</th><th>Статус</th>"
+        "<th>Результат</th><th>Поддерживает гипотезу</th></tr></thead>"
         f"<tbody>{rows}</tbody></table>"
     )
 
@@ -111,8 +129,8 @@ def _investigation_html(investigation: dict[str, Any] | None) -> str:
     if not investigation:
         return (
             '<section class="investigation">'
-            "<h4>Investigation results</h4>"
-            '<p class="muted">Investigation report is unavailable.</p>'
+            "<h4>Результаты расследования</h4>"
+            '<p class="muted">Результаты расследования недоступны.</p>'
             "</section>"
         )
 
@@ -123,30 +141,31 @@ def _investigation_html(investigation: dict[str, Any] | None) -> str:
         [
             (
                 f"{tool.get('tool_name')}: {tool.get('reason')} "
-                f"(expected: {tool.get('expected_evidence')})"
+                "(ожидаемое подтверждение: "
+                f"{tool.get('expected_evidence')})"
             )
             for tool in selected_tools
         ]
     )
     return (
         '<section class="investigation">'
-        "<h4>Investigation results</h4>"
+        "<h4>Результаты расследования</h4>"
         '<div class="investigation-grid">'
-        "<div><h5>Selected tools</h5>"
+        "<div><h5>Выбранные инструменты</h5>"
         f"{selected_tools_html}</div>"
-        "<div><h5>Evidence summary</h5>"
+        "<div><h5>Сводка подтверждений</h5>"
         f"{_list_html(report.get('evidence_summary'))}</div>"
         "</div>"
-        "<h5>Tool results</h5>"
+        "<h5>Результаты инструментов</h5>"
         f"{_tool_results_html(investigation.get('tool_results', []))}"
         '<div class="root-cause">'
-        "<h5>Root cause hypothesis</h5>"
+        "<h5>Гипотеза первопричины</h5>"
         f"<p>{_escape(report.get('root_cause_hypothesis'))}</p>"
         '<div class="badges">'
-        f"{_badge(str(report.get('confidence', 'unknown')), 'confidence: ')}"
-        f"{_badge(str(report.get('needs_manual_review', False)), 'manual review: ')}"
+        f"{_badge(str(report.get('confidence', 'unknown')), 'уверенность: ')}"
+        f"{_badge(str(report.get('needs_manual_review', False)), 'ручная проверка: ')}"
         "</div></div>"
-        "<h5>Recommended actions</h5>"
+        "<h5>Рекомендованные действия</h5>"
         f"{_list_html(report.get('recommended_actions'))}"
         "</section>"
     )
@@ -158,28 +177,28 @@ def _final_summary_html(
 ) -> str:
     if not final_summary:
         return (
-            "<h2>Executive summary</h2>"
+            "<h2>Итоговое резюме</h2>"
             f'<section class="summary"><p>{_escape(fallback_summary)}</p>'
-            '<p class="muted">Final LLM summary is unavailable.</p></section>'
+            '<p class="muted">Финальное LLM-резюме недоступно.</p></section>'
         )
     return (
-        "<h2>Executive summary</h2>"
+        "<h2>Итоговое резюме</h2>"
         '<section class="summary">'
         '<div class="summary-heading">'
-        f"<h3>Overall status: {_escape(final_summary.get('overall_status'))}</h3>"
+        f"<h3>Общий статус: {_escape(final_summary.get('overall_status'))}</h3>"
         f"{_badge(str(final_summary.get('overall_status', 'unknown')))}"
         "</div>"
         f"<p>{_escape(final_summary.get('executive_summary'))}</p>"
-        "<h4>Manager summary</h4>"
+        "<h4>Резюме для руководителя</h4>"
         f"<p>{_escape(final_summary.get('manager_summary'))}</p>"
         '<div class="summary-grid">'
-        "<div><h4>Expected events</h4>"
+        "<div><h4>Ожидаемые события</h4>"
         f"{_list_html(final_summary.get('expected_events'))}</div>"
-        "<div><h4>Potential incidents</h4>"
+        "<div><h4>Потенциальные инциденты</h4>"
         f"{_list_html(final_summary.get('potential_incidents'))}</div>"
-        "<div><h4>Root cause hypotheses</h4>"
+        "<div><h4>Гипотезы первопричин</h4>"
         f"{_list_html(final_summary.get('root_cause_hypotheses'))}</div>"
-        "<div><h4>Priority checks</h4>"
+        "<div><h4>Приоритетные проверки</h4>"
         f"{_list_html(final_summary.get('priority_checks'))}</div>"
         "</div></section>"
     )
@@ -202,30 +221,30 @@ def _group_card(
         f'<p class="group-id">{_escape(alert_group["alert_group_id"])}</p></div>'
         '<div class="badges">'
         f"{_badge(classification)}"
-        f"{_badge(str(comment.get('risk_level', 'unknown')), 'risk: ')}"
-        f"{_badge(str(comment.get('confidence', 'unknown')), 'confidence: ')}"
+        f"{_badge(str(comment.get('risk_level', 'unknown')), 'риск: ')}"
+        f"{_badge(str(comment.get('confidence', 'unknown')), 'уверенность: ')}"
         "</div></div>"
         '<div class="meta-grid">'
-        f"<div><span>Event type</span>{_escape(alert_group.get('event_type'))}</div>"
-        f"<div><span>Process</span>{_escape(alert_group.get('process'))}</div>"
-        f"<div><span>Product</span>{_escape(alert_group.get('product'))}</div>"
-        f"<div><span>Segment</span>{_escape(alert_group.get('segment'))}</div>"
+        f"<div><span>Тип события</span>{_escape(alert_group.get('event_type'))}</div>"
+        f"<div><span>Процесс</span>{_escape(alert_group.get('process'))}</div>"
+        f"<div><span>Продукт</span>{_escape(alert_group.get('product'))}</div>"
+        f"<div><span>Сегмент</span>{_escape(alert_group.get('segment'))}</div>"
         "</div>"
         f"<p class=\"conclusion\">{_escape(comment.get('short_conclusion'))}</p>"
-        "<h4>Main alert</h4>"
+        "<h4>Основной алерт</h4>"
         f"<p>{_alert_summary(alert_group['main_alert'])}</p>"
-        "<h4>Related alerts</h4>"
+        "<h4>Связанные алерты</h4>"
         f"{_related_alerts_html(alert_group.get('related_alerts', []))}"
-        "<h4>Charts</h4>"
+        "<h4>Графики</h4>"
         f"{_charts_html(chart_paths)}"
         '<div class="comment-grid">'
-        f"<section><h4>Facts</h4>{_list_html(comment.get('facts'))}</section>"
-        "<section><h4>Business interpretation</h4>"
+        f"<section><h4>Факты</h4>{_list_html(comment.get('facts'))}</section>"
+        "<section><h4>Бизнес-интерпретация</h4>"
         f"<p>{_escape(comment.get('business_interpretation'))}</p></section>"
-        f"<section><h4>Possible causes</h4>{_list_html(comment.get('possible_causes'))}</section>"
-        f"<section><h4>Recommended checks</h4>{_list_html(comment.get('recommended_checks'))}</section>"
+        f"<section><h4>Возможные причины</h4>{_list_html(comment.get('possible_causes'))}</section>"
+        f"<section><h4>Рекомендованные проверки</h4>{_list_html(comment.get('recommended_checks'))}</section>"
         "</div>"
-        "<h4>Retrieved RAG sources</h4>"
+        "<h4>Источники RAG</h4>"
         f"{_rag_sources_html(context)}"
         f"{_investigation_html(investigation)}"
         "</article>"
@@ -266,7 +285,7 @@ def build_human_report(
             {
                 "alert_group_id": group_id,
                 "short_title": alert_group["event_type"],
-                "short_conclusion": "LLM comment is unavailable.",
+                "short_conclusion": "Комментарий LLM недоступен.",
                 "event_classification": "needs_manual_review",
                 "risk_level": "unknown",
                 "confidence": "unknown",
@@ -291,11 +310,11 @@ def build_human_report(
         group.get("critical_count", 0) > 0 for group in alert_groups
     )
     technical_summary = (
-        f"Monitoring contains {len(monitoring_df)} aggregated rows, "
-        f"{len(alert_objects)} alert objects and {len(alert_groups)} alert "
-        f"groups. {len(expected_groups)} groups are classified as expected "
-        f"events or process features; {len(incident_groups)} groups require "
-        "incident review."
+        f"Мониторинг содержит {len(monitoring_df)} агрегированных строк, "
+        f"{len(alert_objects)} объектов алертов и {len(alert_groups)} групп "
+        f"алертов. {len(expected_groups)} групп относятся к ожидаемым "
+        f"событиям или особенностям процесса; {len(incident_groups)} групп "
+        "требуют проверки как потенциальные инциденты."
     )
 
     nav_expected = _list_html(
@@ -311,12 +330,12 @@ def build_human_report(
         ]
     )
     statistics = [
-        ("Monitoring rows", len(monitoring_df)),
-        ("Alert objects", len(alert_objects)),
-        ("Alert groups", len(alert_groups)),
-        ("Critical groups", critical_groups),
-        ("Expected events", len(expected_groups)),
-        ("Potential incidents", len(incident_groups)),
+        ("Строк мониторинга", len(monitoring_df)),
+        ("Объектов алертов", len(alert_objects)),
+        ("Групп алертов", len(alert_groups)),
+        ("Критичных групп", critical_groups),
+        ("Ожидаемых событий", len(expected_groups)),
+        ("Потенциальных инцидентов", len(incident_groups)),
     ]
     statistics_html = "".join(
         f'<div class="stat"><strong>{value}</strong><span>{_escape(label)}</span></div>'
@@ -324,11 +343,11 @@ def build_human_report(
     )
 
     document = f"""<!doctype html>
-<html lang="en">
+<html lang="ru">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Collection Monitoring Report</title>
+  <title>Отчет по мониторингу Collection</title>
   <style>
     :root {{
       --ink: #172033; --muted: #667085; --line: #dfe3ea;
@@ -407,24 +426,24 @@ def build_human_report(
 </head>
 <body>
 <main>
-  <h1>Collection Monitoring Report</h1>
-  <p class="subtitle">Demo run technical report</p>
+  <h1>Отчет по мониторингу Collection</h1>
+  <p class="subtitle">Технический отчет демонстрационного запуска</p>
 
   {_final_summary_html(final_summary, technical_summary)}
 
-  <h2>Monitoring statistics</h2>
+  <h2>Статистика мониторинга</h2>
   <section class="stats">{statistics_html}</section>
 
   <div class="index-grid">
     <section class="index-panel">
-      <h2>Expected events</h2>{nav_expected}
+      <h2>Ожидаемые события</h2>{nav_expected}
     </section>
     <section class="index-panel">
-      <h2>Potential incidents</h2>{nav_incidents}
+      <h2>Потенциальные инциденты</h2>{nav_incidents}
     </section>
   </div>
 
-  <h2>Alert groups</h2>
+  <h2>Группы алертов</h2>
   {''.join(group_cards)}
 </main>
 </body>

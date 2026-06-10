@@ -16,6 +16,7 @@ from src.prompts import (
     build_investigation_planner_prompt,
     build_investigation_summary_prompt,
     build_repair_json_prompt,
+    build_translate_json_to_russian_prompt,
 )
 from src.schemas import (
     AlertGroupComment,
@@ -26,6 +27,52 @@ from src.schemas import (
 
 
 SchemaT = TypeVar("SchemaT", bound=BaseModel)
+
+TECHNICAL_LATIN_WORDS = {
+    "alert",
+    "api",
+    "collection",
+    "critical",
+    "data",
+    "dpd",
+    "event",
+    "feature",
+    "gini",
+    "high",
+    "info",
+    "json",
+    "llm",
+    "low",
+    "medium",
+    "model",
+    "null",
+    "ok",
+    "pp",
+    "psi",
+    "python",
+    "rate",
+    "reject",
+    "risk",
+    "score",
+    "share",
+    "target",
+    "tool",
+    "vector",
+    "warning",
+}
+
+TECHNICAL_VALUES = {
+    "expected_event",
+    "expected_process_feature",
+    "potential_incident",
+    "needs_manual_review",
+    "low",
+    "medium",
+    "high",
+    "ok",
+    "warning",
+    "critical",
+}
 
 SYSTEM_PROMPT = """
 Ты работаешь в системе мониторинга Collection.
@@ -48,6 +95,37 @@ def _extract_json(raw_response: str) -> dict[str, Any]:
     if not isinstance(value, dict):
         raise ValueError("GigaChat response must be a JSON object.")
     return value
+
+
+def _is_technical_value(value: str) -> bool:
+    stripped = value.strip()
+    if stripped in TECHNICAL_VALUES:
+        return True
+    if re.fullmatch(r"[a-z0-9]+(?:_[a-z0-9]+)+", stripped):
+        return True
+    if stripped.startswith("alert_group_"):
+        return True
+    return False
+
+
+def _contains_english_sentence(value: Any) -> bool:
+    if isinstance(value, dict):
+        return any(_contains_english_sentence(item) for item in value.values())
+    if isinstance(value, list):
+        return any(_contains_english_sentence(item) for item in value)
+    if not isinstance(value, str) or _is_technical_value(value):
+        return False
+
+    latin_words = re.findall(r"\b[A-Za-z]{2,}\b", value)
+    nontechnical_words = [
+        word
+        for word in latin_words
+        if word.lower() not in TECHNICAL_LATIN_WORDS
+    ]
+    cyrillic_letters = len(re.findall(r"[А-Яа-яЁё]", value))
+    if cyrillic_letters == 0:
+        return len(latin_words) >= 3 and len(nontechnical_words) >= 2
+    return len(nontechnical_words) >= 5
 
 
 class GigaChatClient:
@@ -81,7 +159,9 @@ class GigaChatClient:
             target_schema=target_model.model_json_schema(),
         )
         try:
-            return target_model.model_validate(_extract_json(raw_response))
+            validated = target_model.model_validate(
+                _extract_json(raw_response)
+            )
         except (json.JSONDecodeError, ValueError, ValidationError) as error:
             if not repair_on_error:
                 raise
@@ -94,7 +174,23 @@ class GigaChatClient:
                 prompt=repair_prompt,
                 target_schema=target_model.model_json_schema(),
             )
-            return target_model.model_validate(_extract_json(repaired_response))
+            validated = target_model.model_validate(
+                _extract_json(repaired_response)
+            )
+
+        if _contains_english_sentence(validated.model_dump()):
+            language_prompt = build_translate_json_to_russian_prompt(
+                validated_json=validated.model_dump(),
+                target_schema=target_model.model_json_schema(),
+            )
+            translated_response = self._chat(
+                prompt=language_prompt,
+                target_schema=target_model.model_json_schema(),
+            )
+            validated = target_model.model_validate(
+                _extract_json(translated_response)
+            )
+        return validated
 
     def comment_alert_group(
         self,

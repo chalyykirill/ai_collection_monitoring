@@ -22,33 +22,33 @@ import pandas as pd
 
 EVENT_CHARTS: dict[str, list[tuple[list[str], str]]] = {
     "bank_unavailable_day": [
-        (["cnt_clients", "cnt_scored"], "Client and scoring volume"),
+        (["cnt_clients", "cnt_scored"], "Объем клиентов и скоринга"),
     ],
     "credit_card_batch_inflow": [
-        (["cnt_clients"], "Credit card client volume"),
+        (["cnt_clients"], "Объем клиентов credit_card"),
     ],
     "model_gini_drop": [
-        (["gini"], "Model Gini"),
+        (["gini"], "Gini модели"),
     ],
     "empty_feature_vector": [
         (
             ["empty_feature_vector_share", "feature_missing_rate"],
-            "Feature vector missing rates",
+            "Доли пропусков в feature vector",
         ),
-        (["avg_score"], "Average score"),
+        (["avg_score"], "Средний score"),
     ],
     "new_high_risk_segment": [
-        (["avg_score"], "Average score"),
-        (["high_risk_share", "target_rate"], "Risk and target rates"),
+        (["avg_score"], "Средний score"),
+        (["high_risk_share", "target_rate"], "Доли риска и target"),
     ],
     "optimizer_mass_reject": [
-        (["reject_share"], "Optimizer reject share"),
+        (["reject_share"], "Доля отказов оптимизатора"),
         (
             [
                 "cnt_approved_for_communication",
                 "cnt_rejected_by_optimizer",
             ],
-            "Optimizer communication decisions",
+            "Решения оптимизатора по коммуникациям",
         ),
     ],
 }
@@ -111,10 +111,10 @@ def _save_line_chart(
         color="#d62728",
         linestyle="--",
         linewidth=1.5,
-        label=f"event: {event_date.date().isoformat()}",
+        label=f"событие: {event_date.date().isoformat()}",
     )
     axis.set_title(title)
-    axis.set_xlabel("Report date")
+    axis.set_xlabel("Дата отчета")
     axis.grid(alpha=0.25)
     axis.legend(loc="best")
     axis.xaxis.set_major_locator(mdates.AutoDateLocator())
@@ -157,7 +157,7 @@ def _build_credit_card_share_chart(
     return _save_line_chart(
         share,
         ["credit_card_share"],
-        "Credit card share in process flow",
+        "Доля credit_card в потоке процесса",
         event_date,
         output_path,
     )
@@ -177,7 +177,7 @@ def build_charts_for_alert_group(
 
     chart_specs = EVENT_CHARTS.get(
         event_type,
-        [([str(alert_group["main_alert"]["metric"])], "Main alert metric")],
+        [([str(alert_group["main_alert"]["metric"])], "Основная метрика алерта")],
     )
     for index, (metrics, title) in enumerate(chart_specs, start=1):
         filename = f"{group_id}_{index}.png"

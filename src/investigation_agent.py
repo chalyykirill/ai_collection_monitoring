@@ -46,7 +46,7 @@ def _execute_tool(
         raw_result = {
             "tool_name": tool_name,
             "status": "warning",
-            "finding": f"Tool execution failed: {error}",
+            "finding": f"Выполнение инструмента завершилось ошибкой: {error}",
             "evidence": {},
             "supports_hypothesis": False,
         }
@@ -89,4 +89,3 @@ def run_investigation_for_group(
         "tool_results": [result.model_dump() for result in tool_results],
         "investigation_report": investigation_report.model_dump(),
     }
-
