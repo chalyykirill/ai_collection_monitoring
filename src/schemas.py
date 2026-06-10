@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Literal
+from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -27,16 +27,24 @@ class AlertGroupComment(StrictSchema):
     confidence: Literal["low", "medium", "high"]
 
 
-class SelectedTool(StrictSchema):
+class InvestigationToolCall(StrictSchema):
     tool_name: str
     reason: str
     expected_evidence: str
 
 
-class InvestigationPlan(StrictSchema):
+class InvestigationToolPlan(StrictSchema):
     alert_group_id: str
-    selected_tools: list[SelectedTool] = Field(max_length=5)
+    selected_tools: list[InvestigationToolCall] = Field(max_length=5)
     stop_reason: str
+
+
+class ToolResult(StrictSchema):
+    tool_name: str
+    status: Literal["ok", "warning", "critical"]
+    finding: str
+    evidence: dict[str, Any]
+    supports_hypothesis: bool
 
 
 class InvestigationReport(StrictSchema):
@@ -57,3 +65,7 @@ class FinalSummary(StrictSchema):
     priority_checks: list[str]
     manager_summary: str
 
+
+# Backward-compatible names used by the first prompt architecture prototype.
+SelectedTool = InvestigationToolCall
+InvestigationPlan = InvestigationToolPlan

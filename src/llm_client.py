@@ -20,7 +20,7 @@ from src.prompts import (
 from src.schemas import (
     AlertGroupComment,
     FinalSummary,
-    InvestigationPlan,
+    InvestigationToolPlan,
     InvestigationReport,
 )
 
@@ -74,6 +74,7 @@ class GigaChatClient:
         self,
         prompt: str,
         target_model: type[SchemaT],
+        repair_on_error: bool = True,
     ) -> SchemaT:
         raw_response = self._chat(
             prompt=prompt,
@@ -82,6 +83,8 @@ class GigaChatClient:
         try:
             return target_model.model_validate(_extract_json(raw_response))
         except (json.JSONDecodeError, ValueError, ValidationError) as error:
+            if not repair_on_error:
+                raise
             repair_prompt = build_repair_json_prompt(
                 raw_response=raw_response,
                 validation_error=str(error),
@@ -118,7 +121,7 @@ class GigaChatClient:
         doc_context: str,
         available_tools: list[dict],
         examples: list[dict] | None = None,
-    ) -> InvestigationPlan:
+    ) -> InvestigationToolPlan:
         prompt = build_investigation_planner_prompt(
             alert_group=alert_group,
             alert_comment=alert_comment,
@@ -126,7 +129,16 @@ class GigaChatClient:
             available_tools=available_tools,
             examples=examples,
         )
-        return self.generate_json(prompt, InvestigationPlan)
+        plan = self.generate_json(
+            prompt,
+            InvestigationToolPlan,
+            repair_on_error=False,
+        )
+        if plan.alert_group_id != alert_group["alert_group_id"]:
+            raise ValueError(
+                "GigaChat returned an investigation plan for another group."
+            )
+        return plan
 
     def summarize_investigation(
         self,
@@ -143,7 +155,16 @@ class GigaChatClient:
             doc_context=doc_context,
             examples=examples,
         )
-        return self.generate_json(prompt, InvestigationReport)
+        report = self.generate_json(
+            prompt,
+            InvestigationReport,
+            repair_on_error=False,
+        )
+        if report.alert_group_id != alert_group["alert_group_id"]:
+            raise ValueError(
+                "GigaChat returned an investigation report for another group."
+            )
+        return report
 
     def summarize_monitoring(
         self,

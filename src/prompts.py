@@ -6,7 +6,7 @@ from typing import Any
 from src.schemas import (
     AlertGroupComment,
     FinalSummary,
-    InvestigationPlan,
+    InvestigationToolPlan,
     InvestigationReport,
 )
 
@@ -191,7 +191,28 @@ def build_investigation_planner_prompt(
             "ожидаемого события сначала выбирай проверку календаря или "
             "известного события. Если документация уже подтверждает событие, "
             "допустим минимальный набор tools. Если подходящих tools нет, "
-            "верни пустой selected_tools и объясни stop_reason."
+            "верни пустой selected_tools и объясни stop_reason. Ориентиры: "
+            "для bank_unavailable_day сначала проверь календарь и объем; для "
+            "credit_card_batch_inflow — календарь, продуктовый микс и при "
+            "необходимости target rate; для model_gini_drop — target rate, "
+            "PSI и распределение score; для empty_feature_vector — missing "
+            "rate, пустые vectors и score distribution; для "
+            "new_high_risk_segment — score distribution, target rate, PSI и "
+            "product mix; для optimizer_mass_reject — reject share, "
+            "communication mix и volume. Считай эти наборы рекомендуемым "
+            "baseline: включай перечисленные tools, если они доступны в "
+            "whitelist. Для bank_unavailable_day baseline обязательно "
+            "включает check_known_event_calendar и check_volume_shift. Для "
+            "optimizer_mass_reject baseline включает "
+            "check_optimizer_reject_share, check_communication_mix_shift и "
+            "check_volume_shift. Отклоняйся от baseline только если tool "
+            "недоступен или явно нерелевантен, и укажи причину в stop_reason. "
+            "Для expected_event выбирай не более двух tools. Для "
+            "expected_process_feature выбирай не более трех tools: calendar, "
+            "основную проверку особенности процесса и при необходимости одну "
+            "связанную метрику. Не выбирай check_known_event_calendar для "
+            "potential_incident. Не добавляй tools сверх baseline только для "
+            "заполнения лимита."
         ),
         doc_context=doc_context,
         input_data={
@@ -204,7 +225,7 @@ def build_investigation_planner_prompt(
             "какое evidence ожидается. tool_name должен точно совпадать с "
             "именем в whitelist."
         ),
-        target_schema=InvestigationPlan.model_json_schema(),
+        target_schema=InvestigationToolPlan.model_json_schema(),
         examples=examples,
     )
 
@@ -325,4 +346,3 @@ def build_repair_prompt(raw_response: str, validation_error: str) -> str:
         validation_error,
         AlertGroupComment.model_json_schema(),
     )
-
