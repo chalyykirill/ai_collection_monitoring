@@ -6,3 +6,4 @@ matplotlib
 plotly
 python-dotenv
 requests
+gigachat==0.2.1
