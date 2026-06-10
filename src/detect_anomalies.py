@@ -60,19 +60,38 @@ METRIC_LABELS = {
     "cnt_clients": "Количество клиентов",
     "null_metrics_rate": "Доля незаполненных ключевых метрик",
     "product_share": "Доля продукта credit_card в потоке",
-    "gini": "Gini",
-    "target_rate": "Target rate",
+    "gini": "Метрика Gini",
+    "target_rate": "Метрика target_rate",
     "avg_score": "Средний score",
     "median_score": "Медианный score",
     "p90_score": "90-й перцентиль score",
     "high_risk_share": "Доля high-risk клиентов",
     "feature_missing_rate": "Доля пропущенных признаков",
     "empty_feature_vector_share": "Доля пустых feature vector",
-    "psi_score": "PSI score",
+    "psi_score": "Метрика psi_score",
     "psi_features": "PSI признаков",
     "reject_share": "Доля отказов оптимизатора",
     "cnt_approved_for_communication": "Количество одобренных коммуникаций",
     "unknown_communication_share": "Доля неизвестных коммуникаций",
+}
+
+METRIC_CHANGE_VERBS = {
+    "cnt_clients": "изменилось",
+    "null_metrics_rate": "изменилась",
+    "product_share": "изменилась",
+    "gini": "изменилась",
+    "target_rate": "изменилась",
+    "avg_score": "изменился",
+    "median_score": "изменился",
+    "p90_score": "изменился",
+    "high_risk_share": "изменилась",
+    "feature_missing_rate": "изменилась",
+    "empty_feature_vector_share": "изменилась",
+    "psi_score": "изменилась",
+    "psi_features": "изменился",
+    "reject_share": "изменилась",
+    "cnt_approved_for_communication": "изменилось",
+    "unknown_communication_share": "изменилась",
 }
 
 
@@ -124,8 +143,9 @@ def _description(
     severity: str,
 ) -> str:
     label = METRIC_LABELS.get(metric, metric)
+    change_verb = METRIC_CHANGE_VERBS.get(metric, "изменилась")
     return (
-        f"{label} изменилось с {_format_value(previous_value)} "
+        f"{label} {change_verb} с {_format_value(previous_value)} "
         f"до {_format_value(current_value)}; зафиксирован алерт {severity}."
     )
 

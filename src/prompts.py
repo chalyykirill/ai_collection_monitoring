@@ -182,7 +182,13 @@ def build_alert_commentator_prompt(
             "expected_process_feature, не называй событие инцидентом в "
             "short_title, short_conclusion и business_interpretation. "
             "Используй формулировки «ожидаемое событие» или «ожидаемая "
-            "особенность процесса»."
+            "особенность процесса». Для model_gini_drop поле threshold_abs "
+            "является порогом величины падения Gini, а не минимально "
+            "допустимым значением Gini. Сравнивай abs(delta_abs) с "
+            "threshold_abs. Например, при current_value=0.31, "
+            "previous_value=0.4261 и threshold_abs=0.07 пиши: «Снижение Gini "
+            "составило 0.1161 и превысило порог значимого падения 0.07». "
+            "Никогда не пиши, что значение Gini 0.31 ниже порога 0.07."
         ),
         target_schema=AlertGroupComment.model_json_schema(),
         examples=examples,
@@ -270,7 +276,11 @@ def build_investigation_summary_prompt(
             "Опирайся только на tool_results. Не превращай исходный alert или "
             "документацию в подтвержденное evidence без результата tool. Если "
             "результаты отсутствуют, противоречивы или недостаточны, установи "
-            "needs_manual_review=true и снизь confidence."
+            "needs_manual_review=true и снизь confidence. Учитывай "
+            "event_classification из alert_comment. Для expected_event и "
+            "expected_process_feature критический статус отдельной метрики "
+            "может быть механическим результатом порога и не означает "
+            "инцидент, если ожидаемое событие подтверждено."
         ),
         doc_context=doc_context,
         input_data={
@@ -280,7 +290,21 @@ def build_investigation_summary_prompt(
         },
         output_rules=(
             "evidence_summary должен перечислять только наблюдения из "
-            "tool_results. root_cause_hypothesis должна оставаться гипотезой."
+            "tool_results. root_cause_hypothesis должна оставаться гипотезой. "
+            "Для expected_event и expected_process_feature не используй "
+            "формулировки «потенциальная проблема», «инцидент», «сбой» или "
+            "«ошибка» как трактовку события. recommended_actions должны быть "
+            "контрольными: проверить завершение ожидаемого процесса и "
+            "восстановление метрик, без аварийной эскалации. Для "
+            "credit_card_batch_inflow объясни скачок объема и доли "
+            "credit_card ожидаемым пакетным поступлением портфеля; рекомендуй "
+            "контроль завершения загрузки и анализ метрик с учетом "
+            "продуктового микса. Для bank_unavailable_day явно укажи, что "
+            "критичное отклонение объема объяснено подтвержденным ЕДН и не "
+            "является инцидентом. Для model_gini_drop threshold_abs означает "
+            "порог величины падения: сравнивай abs(delta_abs) с "
+            "threshold_abs и не утверждай, что текущее значение Gini ниже "
+            "самого threshold_abs."
         ),
         target_schema=InvestigationReport.model_json_schema(),
         examples=examples,
@@ -315,7 +339,8 @@ def build_final_summarizer_prompt(
             "Не пересказывай все алерты подряд. Разделяй expected events и "
             "potential incidents. Общий статус critical не отменяет и не "
             "скрывает ожидаемые события. Ожидаемые события не эскалируй как "
-            f"инциденты. {evidence_note}"
+            "инциденты и не описывай их в manager_summary как проблему, сбой "
+            f"или ошибку. {evidence_note}"
         ),
         doc_context=doc_context,
         input_data={
@@ -334,9 +359,12 @@ def build_final_summarizer_prompt(
             "potential_incidents также верни только точные alert_group_id, по "
             "одному идентификатору на элемент. Не пропускай ни одной группы и "
             "не помещай одну группу в оба списка. root_cause_hypotheses бери "
-            "только из investigation_reports; не добавляй гипотезу, которая "
-            "там отсутствует. Объединяй дублирующиеся priority checks и "
-            "сохраняй итог компактным."
+            "только из investigation_reports групп с классификацией "
+            "potential_incident или needs_manual_review; объяснения "
+            "expected_event и expected_process_feature не включай в список "
+            "первопричин инцидентов. Не добавляй гипотезу, которая отсутствует "
+            "в investigation_reports. Объединяй дублирующиеся priority checks "
+            "и сохраняй итог компактным."
         ),
         target_schema=FinalSummary.model_json_schema(),
         examples=examples,

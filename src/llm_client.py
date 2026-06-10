@@ -172,6 +172,163 @@ def _final_summary_consistency_errors(
     return errors
 
 
+def _gini_drop_statement(alert_group: dict[str, Any]) -> str | None:
+    alerts = [
+        alert_group.get("main_alert", {}),
+        *alert_group.get("related_alerts", []),
+    ]
+    gini_alert = next(
+        (alert for alert in alerts if alert.get("metric") == "gini"),
+        None,
+    )
+    if not gini_alert:
+        return None
+
+    delta_abs = gini_alert.get("delta_abs")
+    threshold_abs = gini_alert.get("threshold_abs")
+    if delta_abs is None or threshold_abs is None:
+        return None
+    return (
+        f"Снижение Gini составило {abs(float(delta_abs)):.4f} и превысило "
+        f"порог значимого падения {float(threshold_abs):.2f}."
+    )
+
+
+def _has_gini_threshold_misstatement(text: str) -> bool:
+    normalized = text.lower()
+    return (
+        "gini" in normalized
+        and "порог" in normalized
+        and ("ниже" in normalized or "меньше" in normalized)
+    )
+
+
+def _ensure_gini_drop_statement(
+    items: list[str],
+    statement: str,
+) -> list[str]:
+    polished: list[str] = []
+    statement_added = False
+    for item in items:
+        normalized = item.lower()
+        is_threshold_statement = (
+            "порог" in normalized
+            and ("gini" in normalized or "delta_abs" in normalized)
+        )
+        if _has_gini_threshold_misstatement(item) or is_threshold_statement:
+            if not statement_added:
+                polished.append(statement)
+                statement_added = True
+            continue
+        polished.append(_clean_sentence(item))
+    if not statement_added:
+        polished.append(statement)
+    return polished
+
+
+def _clean_sentence(text: str) -> str:
+    return text.replace("п.п..", "п.п.")
+
+
+def _polish_alert_comment_semantics(
+    comment: AlertGroupComment,
+    alert_group: dict[str, Any],
+) -> AlertGroupComment:
+    if alert_group.get("event_type") != "model_gini_drop":
+        return comment
+
+    statement = _gini_drop_statement(alert_group)
+    if statement is None:
+        return comment
+    facts = _ensure_gini_drop_statement(comment.facts, statement)
+    return comment.model_copy(update={"facts": facts})
+
+
+def _polish_investigation_semantics(
+    report: InvestigationReport,
+    alert_group: dict[str, Any],
+    alert_comment: dict[str, Any],
+) -> InvestigationReport:
+    event_type = alert_group.get("event_type")
+    classification = alert_comment.get("event_classification")
+    update: dict[str, Any] = {
+        "evidence_summary": [
+            _clean_sentence(item)
+            for item in report.evidence_summary
+        ],
+        "root_cause_hypothesis": _clean_sentence(
+            report.root_cause_hypothesis
+        ),
+        "recommended_actions": [
+            _clean_sentence(item)
+            for item in report.recommended_actions
+        ],
+    }
+
+    if event_type == "model_gini_drop":
+        statement = _gini_drop_statement(alert_group)
+        if statement is not None:
+            update["evidence_summary"] = _ensure_gini_drop_statement(
+                report.evidence_summary,
+                statement,
+            )
+
+    if classification in EXPECTED_CLASSIFICATIONS:
+        if event_type == "credit_card_batch_inflow":
+            update.update(
+                {
+                    "root_cause_hypothesis": (
+                        "Скачок объема и доли credit_card объясняется "
+                        "ожидаемым пакетным поступлением портфеля."
+                    ),
+                    "recommended_actions": [
+                        "Контролировать завершение пакетной загрузки.",
+                        (
+                            "Анализировать метрики с учетом продуктового "
+                            "микса."
+                        ),
+                    ],
+                    "needs_manual_review": False,
+                }
+            )
+        elif event_type == "bank_unavailable_day":
+            update.update(
+                {
+                    "root_cause_hypothesis": (
+                        "Критичное отклонение объема объяснено "
+                        "подтвержденным ЕДН и не является инцидентом."
+                    ),
+                    "recommended_actions": [
+                        (
+                            "Контролировать восстановление потока после "
+                            "завершения ЕДН."
+                        )
+                    ],
+                    "needs_manual_review": False,
+                }
+            )
+        else:
+            update.update(
+                {
+                    "root_cause_hypothesis": str(
+                        alert_comment.get(
+                            "business_interpretation",
+                            report.root_cause_hypothesis,
+                        )
+                    ),
+                    "recommended_actions": list(
+                        alert_comment.get(
+                            "recommended_checks",
+                            report.recommended_actions,
+                        )
+                    ),
+                    "needs_manual_review": False,
+                }
+            )
+
+    return report.model_copy(update=update)
+
+
 class GigaChatClient:
     def __init__(
         self,
@@ -252,7 +409,7 @@ class GigaChatClient:
             raise ValueError(
                 "GigaChat returned a comment for another alert group."
             )
-        return comment
+        return _polish_alert_comment_semantics(comment, alert_group)
 
     def plan_investigation(
         self,
@@ -304,7 +461,11 @@ class GigaChatClient:
             raise ValueError(
                 "GigaChat returned an investigation report for another group."
             )
-        return report
+        return _polish_investigation_semantics(
+            report,
+            alert_group,
+            alert_comment,
+        )
 
     def summarize_monitoring(
         self,
