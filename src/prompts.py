@@ -177,7 +177,12 @@ def build_alert_commentator_prompt(
         input_data={"alert_group": alert_group},
         output_rules=(
             "Факты должны следовать из alert group или документации. "
-            "possible_causes являются только проверяемыми гипотезами."
+            "possible_causes являются только проверяемыми гипотезами. Если "
+            "event_classification равен expected_event или "
+            "expected_process_feature, не называй событие инцидентом в "
+            "short_title, short_conclusion и business_interpretation. "
+            "Используй формулировки «ожидаемое событие» или «ожидаемая "
+            "особенность процесса»."
         ),
         target_schema=AlertGroupComment.model_json_schema(),
         examples=examples,
@@ -308,7 +313,9 @@ def build_final_summarizer_prompt(
         ),
         context=(
             "Не пересказывай все алерты подряд. Разделяй expected events и "
-            f"potential incidents. {evidence_note}"
+            "potential incidents. Общий статус critical не отменяет и не "
+            "скрывает ожидаемые события. Ожидаемые события не эскалируй как "
+            f"инциденты. {evidence_note}"
         ),
         doc_context=doc_context,
         input_data={
@@ -320,14 +327,55 @@ def build_final_summarizer_prompt(
             "Приоритизируй наиболее важные инциденты и проверки. "
             "expected_events должен перечислить все группы из "
             "alert_group_comments с классификацией expected_event или "
-            "expected_process_feature. potential_incidents должен перечислить "
-            "все группы с классификацией potential_incident или "
-            "needs_manual_review. Не добавляй root cause, который не "
-            "подтвержден investigation_reports. Объединяй дублирующиеся "
-            "priority checks и сохраняй итог компактным."
+            "expected_process_feature. В expected_events верни только точные "
+            "alert_group_id этих групп, по одному идентификатору на элемент. "
+            "potential_incidents должен перечислить все группы с "
+            "классификацией potential_incident или needs_manual_review. В "
+            "potential_incidents также верни только точные alert_group_id, по "
+            "одному идентификатору на элемент. Не пропускай ни одной группы и "
+            "не помещай одну группу в оба списка. root_cause_hypotheses бери "
+            "только из investigation_reports; не добавляй гипотезу, которая "
+            "там отсутствует. Объединяй дублирующиеся priority checks и "
+            "сохраняй итог компактным."
         ),
         target_schema=FinalSummary.model_json_schema(),
         examples=examples,
+    )
+
+
+def build_final_summary_consistency_repair_prompt(
+    final_summary: dict,
+    alert_group_comments: list[dict],
+    consistency_errors: list[str],
+    target_schema: dict,
+) -> str:
+    return (
+        "# Роль\n"
+        "Ты редактор итогового резюме мониторинга Collection.\n\n"
+        "# Цель\n"
+        "Исправить только состав expected_events и potential_incidents, чтобы "
+        "они полностью соответствовали классификациям комментариев.\n\n"
+        "# Контекст\n"
+        "Сохрани overall_status, executive_summary, manager_summary, "
+        "root_cause_hypotheses и priority_checks без изменения. "
+        "expected_events должен содержать точные alert_group_id всех "
+        "комментариев с event_classification expected_event или "
+        "expected_process_feature. potential_incidents должен содержать "
+        "точные alert_group_id всех комментариев с event_classification "
+        "potential_incident или needs_manual_review. Не помещай ожидаемые "
+        "события в potential_incidents. Не добавляй отсутствующие во входных "
+        "данных группы.\n\n"
+        "# Контекст документации\n"
+        "Дополнительная документация не требуется.\n\n"
+        f"{_language_policy_section()}\n\n"
+        "# Входные данные\n"
+        f"{_json({'final_summary': final_summary, 'alert_group_comments': alert_group_comments, 'consistency_errors': consistency_errors})}\n\n"
+        "# Выходные данные\n"
+        "Верни полный исправленный FinalSummary. В expected_events и "
+        "potential_incidents используй только alert_group_id. Верни строго "
+        "один JSON-объект без markdown и текста вокруг.\n\n"
+        "# Выходная JSON schema\n"
+        f"{_json(target_schema)}"
     )
 
 

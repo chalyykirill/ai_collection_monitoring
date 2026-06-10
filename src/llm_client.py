@@ -12,6 +12,7 @@ from pydantic import BaseModel, ValidationError
 
 from src.prompts import (
     build_alert_commentator_prompt,
+    build_final_summary_consistency_repair_prompt,
     build_final_summarizer_prompt,
     build_investigation_planner_prompt,
     build_investigation_summary_prompt,
@@ -74,6 +75,15 @@ TECHNICAL_VALUES = {
     "critical",
 }
 
+EXPECTED_CLASSIFICATIONS = {
+    "expected_event",
+    "expected_process_feature",
+}
+INCIDENT_CLASSIFICATIONS = {
+    "potential_incident",
+    "needs_manual_review",
+}
+
 SYSTEM_PROMPT = """
 Ты работаешь в системе мониторинга Collection.
 Следуй ролевым инструкциям пользовательского промпта.
@@ -126,6 +136,40 @@ def _contains_english_sentence(value: Any) -> bool:
     if cyrillic_letters == 0:
         return len(latin_words) >= 3 and len(nontechnical_words) >= 2
     return len(nontechnical_words) >= 5
+
+
+def _classified_group_ids(
+    alert_group_comments: list[dict],
+) -> tuple[list[str], list[str]]:
+    expected_ids: list[str] = []
+    incident_ids: list[str] = []
+    for comment in alert_group_comments:
+        group_id = str(comment["alert_group_id"])
+        classification = comment.get("event_classification")
+        if classification in EXPECTED_CLASSIFICATIONS:
+            expected_ids.append(group_id)
+        elif classification in INCIDENT_CLASSIFICATIONS:
+            incident_ids.append(group_id)
+    return expected_ids, incident_ids
+
+
+def _final_summary_consistency_errors(
+    summary: FinalSummary,
+    expected_ids: list[str],
+    incident_ids: list[str],
+) -> list[str]:
+    errors: list[str] = []
+    if summary.expected_events != expected_ids:
+        errors.append(
+            "expected_events должен точно совпадать со списком "
+            f"{expected_ids}, получен {summary.expected_events}."
+        )
+    if summary.potential_incidents != incident_ids:
+        errors.append(
+            "potential_incidents должен точно совпадать со списком "
+            f"{incident_ids}, получен {summary.potential_incidents}."
+        )
+    return errors
 
 
 class GigaChatClient:
@@ -277,7 +321,45 @@ class GigaChatClient:
             doc_context=doc_context,
             examples=examples,
         )
-        return self.generate_json(prompt, FinalSummary)
+        summary = self.generate_json(prompt, FinalSummary)
+        expected_ids, incident_ids = _classified_group_ids(
+            alert_group_comments
+        )
+        consistency_errors = _final_summary_consistency_errors(
+            summary,
+            expected_ids,
+            incident_ids,
+        )
+        if consistency_errors:
+            repair_prompt = build_final_summary_consistency_repair_prompt(
+                final_summary=summary.model_dump(),
+                alert_group_comments=alert_group_comments,
+                consistency_errors=consistency_errors,
+                target_schema=FinalSummary.model_json_schema(),
+            )
+            try:
+                repaired_summary = self.generate_json(
+                    repair_prompt,
+                    FinalSummary,
+                )
+            except Exception:
+                repaired_summary = None
+            if repaired_summary is not None:
+                if not _final_summary_consistency_errors(
+                    repaired_summary,
+                    expected_ids,
+                    incident_ids,
+                ):
+                    return repaired_summary
+
+        if consistency_errors:
+            summary = summary.model_copy(
+                update={
+                    "expected_events": expected_ids,
+                    "potential_incidents": incident_ids,
+                }
+            )
+        return summary
 
     def _chat(self, prompt: str, target_schema: dict[str, Any]) -> str:
         payload = Chat(

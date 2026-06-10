@@ -108,7 +108,7 @@ def _charts_html(chart_paths: list[str]) -> str:
 
 def _tool_results_html(tool_results: list[dict[str, Any]]) -> str:
     if not tool_results:
-        return '<p class="muted">Diagnostic tools were not executed.</p>'
+        return '<p class="muted">Диагностические инструменты не запускались.</p>'
     rows = "".join(
         "<tr>"
         f"<td>{_escape(result.get('tool_name'))}</td>"
@@ -174,6 +174,8 @@ def _investigation_html(investigation: dict[str, Any] | None) -> str:
 def _final_summary_html(
     final_summary: dict[str, Any] | None,
     fallback_summary: str,
+    alert_groups: list[dict[str, Any]],
+    comments_by_id: dict[str, dict[str, Any]],
 ) -> str:
     if not final_summary:
         return (
@@ -181,6 +183,20 @@ def _final_summary_html(
             f'<section class="summary"><p>{_escape(fallback_summary)}</p>'
             '<p class="muted">Финальное LLM-резюме недоступно.</p></section>'
         )
+    groups_by_id = {
+        group["alert_group_id"]: group
+        for group in alert_groups
+    }
+    expected_events_html = _summary_groups_html(
+        final_summary.get("expected_events"),
+        groups_by_id,
+        comments_by_id,
+    )
+    potential_incidents_html = _summary_groups_html(
+        final_summary.get("potential_incidents"),
+        groups_by_id,
+        comments_by_id,
+    )
     return (
         "<h2>Итоговое резюме</h2>"
         '<section class="summary">'
@@ -193,15 +209,56 @@ def _final_summary_html(
         f"<p>{_escape(final_summary.get('manager_summary'))}</p>"
         '<div class="summary-grid">'
         "<div><h4>Ожидаемые события</h4>"
-        f"{_list_html(final_summary.get('expected_events'))}</div>"
+        f"{expected_events_html}</div>"
         "<div><h4>Потенциальные инциденты</h4>"
-        f"{_list_html(final_summary.get('potential_incidents'))}</div>"
+        f"{potential_incidents_html}</div>"
         "<div><h4>Гипотезы первопричин</h4>"
         f"{_list_html(final_summary.get('root_cause_hypotheses'))}</div>"
         "<div><h4>Приоритетные проверки</h4>"
         f"{_list_html(final_summary.get('priority_checks'))}</div>"
         "</div></section>"
     )
+
+
+def _summary_groups_html(
+    group_references: list[str] | None,
+    groups_by_id: dict[str, dict[str, Any]],
+    comments_by_id: dict[str, dict[str, Any]],
+) -> str:
+    if not group_references:
+        return '<p class="muted">Нет данных</p>'
+
+    items: list[str] = []
+    for reference in group_references:
+        group = groups_by_id.get(reference)
+        comment = comments_by_id.get(reference, {})
+        if group is None:
+            items.append(f"<li>{_escape(reference)}</li>")
+            continue
+        event_type = group.get("event_type", "unknown_event")
+        short_title = _display_comment_title(comment, str(event_type))
+        items.append(
+            "<li>"
+            f"<strong>{_escape(event_type)}</strong> — "
+            f"{_escape(short_title)}"
+            f'<small class="summary-group-id">{_escape(reference)}</small>'
+            "</li>"
+        )
+    return "<ul>" + "".join(items) + "</ul>"
+
+
+def _display_comment_title(
+    comment: dict[str, Any],
+    fallback: str,
+) -> str:
+    title = str(comment.get("short_title") or fallback)
+    classification = comment.get("event_classification")
+    if (
+        classification in EXPECTED_CLASSIFICATIONS
+        and "инцидент" in title.lower()
+    ):
+        return str(comment.get("short_conclusion") or fallback)
+    return title
 
 
 def _group_card(
@@ -214,10 +271,14 @@ def _group_card(
     classification = str(
         comment.get("event_classification", "needs_manual_review")
     )
+    display_title = _display_comment_title(
+        comment,
+        str(alert_group["event_type"]),
+    )
     return (
         f'<article class="alert-card" id="{_escape(alert_group["alert_group_id"])}">'
         '<div class="card-header">'
-        f"<div><h3>{_escape(comment.get('short_title') or alert_group['event_type'])}</h3>"
+        f"<div><h3>{_escape(display_title)}</h3>"
         f'<p class="group-id">{_escape(alert_group["alert_group_id"])}</p></div>'
         '<div class="badges">'
         f"{_badge(classification)}"
@@ -381,6 +442,8 @@ def build_human_report(
     .alert-card {{ padding: 24px; margin: 22px 0; }}
     .card-header {{ display: flex; justify-content: space-between; gap: 20px; }}
     .group-id {{ margin: 5px 0 0; font-family: monospace; font-size: 12px; }}
+    .summary-group-id {{ display: block; margin-top: 3px; color: var(--muted);
+      font-family: monospace; font-size: 10px; overflow-wrap: anywhere; }}
     .badges {{ display: flex; flex-wrap: wrap; gap: 7px; align-content: start; }}
     .badge {{ display: inline-block; border-radius: 999px; padding: 5px 10px;
       background: #eef2f7; font-size: 12px; font-weight: bold; }}
@@ -429,7 +492,12 @@ def build_human_report(
   <h1>Отчет по мониторингу Collection</h1>
   <p class="subtitle">Технический отчет демонстрационного запуска</p>
 
-  {_final_summary_html(final_summary, technical_summary)}
+  {_final_summary_html(
+      final_summary,
+      technical_summary,
+      alert_groups,
+      comments_by_id,
+  )}
 
   <h2>Статистика мониторинга</h2>
   <section class="stats">{statistics_html}</section>
