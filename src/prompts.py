@@ -302,8 +302,14 @@ def build_final_summarizer_prompt(
             "investigation_reports": investigation_reports,
         },
         output_rules=(
-            "Приоритизируй наиболее важные инциденты и проверки. Не добавляй "
-            "root cause, который не подтвержден investigation_reports."
+            "Приоритизируй наиболее важные инциденты и проверки. "
+            "expected_events должен перечислить все группы из "
+            "alert_group_comments с классификацией expected_event или "
+            "expected_process_feature. potential_incidents должен перечислить "
+            "все группы с классификацией potential_incident или "
+            "needs_manual_review. Не добавляй root cause, который не "
+            "подтвержден investigation_reports. Объединяй дублирующиеся "
+            "priority checks и сохраняй итог компактным."
         ),
         target_schema=FinalSummary.model_json_schema(),
         examples=examples,

@@ -88,10 +88,108 @@ def _charts_html(chart_paths: list[str]) -> str:
     ) + "</div>"
 
 
+def _tool_results_html(tool_results: list[dict[str, Any]]) -> str:
+    if not tool_results:
+        return '<p class="muted">Diagnostic tools were not executed.</p>'
+    rows = "".join(
+        "<tr>"
+        f"<td>{_escape(result.get('tool_name'))}</td>"
+        f"<td>{_badge(str(result.get('status', 'unknown')))}</td>"
+        f"<td>{_escape(result.get('finding'))}</td>"
+        f"<td>{_escape(result.get('supports_hypothesis'))}</td>"
+        "</tr>"
+        for result in tool_results
+    )
+    return (
+        "<table><thead><tr><th>Tool</th><th>Status</th>"
+        "<th>Finding</th><th>Supports hypothesis</th></tr></thead>"
+        f"<tbody>{rows}</tbody></table>"
+    )
+
+
+def _investigation_html(investigation: dict[str, Any] | None) -> str:
+    if not investigation:
+        return (
+            '<section class="investigation">'
+            "<h4>Investigation results</h4>"
+            '<p class="muted">Investigation report is unavailable.</p>'
+            "</section>"
+        )
+
+    tool_plan = investigation.get("tool_plan", {})
+    selected_tools = tool_plan.get("selected_tools", [])
+    report = investigation.get("investigation_report", {})
+    selected_tools_html = _list_html(
+        [
+            (
+                f"{tool.get('tool_name')}: {tool.get('reason')} "
+                f"(expected: {tool.get('expected_evidence')})"
+            )
+            for tool in selected_tools
+        ]
+    )
+    return (
+        '<section class="investigation">'
+        "<h4>Investigation results</h4>"
+        '<div class="investigation-grid">'
+        "<div><h5>Selected tools</h5>"
+        f"{selected_tools_html}</div>"
+        "<div><h5>Evidence summary</h5>"
+        f"{_list_html(report.get('evidence_summary'))}</div>"
+        "</div>"
+        "<h5>Tool results</h5>"
+        f"{_tool_results_html(investigation.get('tool_results', []))}"
+        '<div class="root-cause">'
+        "<h5>Root cause hypothesis</h5>"
+        f"<p>{_escape(report.get('root_cause_hypothesis'))}</p>"
+        '<div class="badges">'
+        f"{_badge(str(report.get('confidence', 'unknown')), 'confidence: ')}"
+        f"{_badge(str(report.get('needs_manual_review', False)), 'manual review: ')}"
+        "</div></div>"
+        "<h5>Recommended actions</h5>"
+        f"{_list_html(report.get('recommended_actions'))}"
+        "</section>"
+    )
+
+
+def _final_summary_html(
+    final_summary: dict[str, Any] | None,
+    fallback_summary: str,
+) -> str:
+    if not final_summary:
+        return (
+            "<h2>Executive summary</h2>"
+            f'<section class="summary"><p>{_escape(fallback_summary)}</p>'
+            '<p class="muted">Final LLM summary is unavailable.</p></section>'
+        )
+    return (
+        "<h2>Executive summary</h2>"
+        '<section class="summary">'
+        '<div class="summary-heading">'
+        f"<h3>Overall status: {_escape(final_summary.get('overall_status'))}</h3>"
+        f"{_badge(str(final_summary.get('overall_status', 'unknown')))}"
+        "</div>"
+        f"<p>{_escape(final_summary.get('executive_summary'))}</p>"
+        "<h4>Manager summary</h4>"
+        f"<p>{_escape(final_summary.get('manager_summary'))}</p>"
+        '<div class="summary-grid">'
+        "<div><h4>Expected events</h4>"
+        f"{_list_html(final_summary.get('expected_events'))}</div>"
+        "<div><h4>Potential incidents</h4>"
+        f"{_list_html(final_summary.get('potential_incidents'))}</div>"
+        "<div><h4>Root cause hypotheses</h4>"
+        f"{_list_html(final_summary.get('root_cause_hypotheses'))}</div>"
+        "<div><h4>Priority checks</h4>"
+        f"{_list_html(final_summary.get('priority_checks'))}</div>"
+        "</div></section>"
+    )
+
+
 def _group_card(
     alert_group: dict[str, Any],
     comment: dict[str, Any],
     context: dict[str, Any] | None,
+    investigation: dict[str, Any] | None,
     chart_paths: list[str],
 ) -> str:
     classification = str(
@@ -129,6 +227,7 @@ def _group_card(
         "</div>"
         "<h4>Retrieved RAG sources</h4>"
         f"{_rag_sources_html(context)}"
+        f"{_investigation_html(investigation)}"
         "</article>"
     )
 
@@ -139,6 +238,8 @@ def build_human_report(
     alert_groups: list[dict],
     alert_group_comments: list[dict],
     retrieved_contexts: list[dict],
+    investigations: list[dict] | None,
+    final_summary: dict[str, Any] | None,
     charts_by_group: dict[str, list[str]],
     output_path: Path,
 ) -> None:
@@ -149,6 +250,10 @@ def build_human_report(
     contexts_by_id = {
         context["alert_group_id"]: context
         for context in retrieved_contexts
+    }
+    investigations_by_id = {
+        investigation["alert_group_id"]: investigation
+        for investigation in (investigations or [])
     }
 
     expected_groups: list[dict] = []
@@ -177,6 +282,7 @@ def build_human_report(
                 alert_group,
                 comment,
                 contexts_by_id.get(group_id),
+                investigations_by_id.get(group_id),
                 charts_by_group.get(group_id, []),
             )
         )
@@ -184,7 +290,7 @@ def build_human_report(
     critical_groups = sum(
         group.get("critical_count", 0) > 0 for group in alert_groups
     )
-    summary = (
+    technical_summary = (
         f"Monitoring contains {len(monitoring_df)} aggregated rows, "
         f"{len(alert_objects)} alert objects and {len(alert_groups)} alert "
         f"groups. {len(expected_groups)} groups are classified as expected "
@@ -249,7 +355,8 @@ def build_human_report(
       border-radius: 12px; text-align: center; }}
     .stat strong {{ display: block; font-size: 28px; color: var(--accent); }}
     .stat span {{ color: var(--muted); }}
-    .index-grid, .comment-grid {{ display: grid; grid-template-columns: 1fr 1fr;
+    .index-grid, .comment-grid, .summary-grid, .investigation-grid {{
+      display: grid; grid-template-columns: 1fr 1fr;
       gap: 18px; }}
     .index-panel {{ padding: 18px 22px; }}
     .alert-card {{ padding: 24px; margin: 22px 0; }}
@@ -268,6 +375,15 @@ def build_human_report(
     .meta-grid span {{ display: block; color: var(--muted); font-size: 12px; }}
     .conclusion {{ font-size: 17px; border-left: 4px solid var(--accent);
       padding: 10px 14px; background: #f7faff; }}
+    .summary-heading {{ display: flex; justify-content: space-between;
+      align-items: center; gap: 15px; }}
+    .summary-grid > div, .investigation-grid > div {{
+      background: #f8fafc; border-radius: 10px; padding: 4px 14px; }}
+    .investigation {{ margin-top: 24px; border-top: 2px solid var(--line);
+      padding-top: 4px; }}
+    .root-cause {{ border-left: 4px solid var(--warning);
+      background: #fffcf5; padding: 4px 14px 14px; margin-top: 16px; }}
+    h5 {{ margin: 16px 0 6px; font-size: 14px; }}
     table {{ width: 100%; border-collapse: collapse; font-size: 13px; }}
     th, td {{ border: 1px solid var(--line); padding: 8px; text-align: left; }}
     th {{ background: #f8fafc; }}
@@ -283,7 +399,8 @@ def build_human_report(
     .score {{ color: var(--muted); font-size: 12px; }}
     @media (max-width: 900px) {{
       .stats, .meta-grid {{ grid-template-columns: repeat(2, 1fr); }}
-      .index-grid, .comment-grid, .charts {{ grid-template-columns: 1fr; }}
+      .index-grid, .comment-grid, .summary-grid, .investigation-grid,
+      .charts {{ grid-template-columns: 1fr; }}
       .card-header {{ display: block; }}
     }}
   </style>
@@ -293,8 +410,7 @@ def build_human_report(
   <h1>Collection Monitoring Report</h1>
   <p class="subtitle">Demo run technical report</p>
 
-  <h2>Executive summary placeholder</h2>
-  <section class="summary"><p>{_escape(summary)}</p></section>
+  {_final_summary_html(final_summary, technical_summary)}
 
   <h2>Monitoring statistics</h2>
   <section class="stats">{statistics_html}</section>
@@ -316,4 +432,3 @@ def build_human_report(
 """
     output_path.parent.mkdir(parents=True, exist_ok=True)
     output_path.write_text(document, encoding="utf-8")
-

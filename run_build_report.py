@@ -20,6 +20,13 @@ def _load_json(path: Path) -> list[dict]:
     return value
 
 
+def _load_optional_json(path: Path, default):
+    if not path.exists():
+        return default
+    with path.open(encoding="utf-8") as file:
+        return json.load(file)
+
+
 def main() -> None:
     monitoring_df = pd.read_csv(
         RUN_DIR / "monitoring_data.csv",
@@ -29,6 +36,14 @@ def main() -> None:
     alert_groups = _load_json(RUN_DIR / "alert_groups.json")
     comments = _load_json(RUN_DIR / "alert_group_comments.json")
     retrieved_contexts = _load_json(RUN_DIR / "retrieved_contexts.json")
+    investigations = _load_optional_json(
+        RUN_DIR / "investigation_reports.json",
+        [],
+    )
+    final_summary = _load_optional_json(
+        RUN_DIR / "final_summary.json",
+        None,
+    )
 
     charts_by_group: dict[str, list[str]] = {}
     for alert_group in alert_groups:
@@ -46,6 +61,8 @@ def main() -> None:
         alert_groups=alert_groups,
         alert_group_comments=comments,
         retrieved_contexts=retrieved_contexts,
+        investigations=investigations,
+        final_summary=final_summary,
         charts_by_group=charts_by_group,
         output_path=REPORT_PATH,
     )
