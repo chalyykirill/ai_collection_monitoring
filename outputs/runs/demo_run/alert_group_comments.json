@@ -1,0 +1,135 @@
+[
+  {
+    "alert_group_id": "alert_group_005__process_monitoring__cash_loan__61-90__new_high_risk__all__all__new_high_risk_segment",
+    "short_title": "Рост доли high-risk клиентов и целевой ставки",
+    "short_conclusion": "Наблюдается значительное увеличение доли high-risk клиентов и целевой ставки.",
+    "facts": [
+      "Зафиксировано критическое изменение целевой ставки с 0.2307 до 0.39.",
+      "Увеличена доля high-risk клиентов с 0.2221 до 0.49.",
+      "Общее количество клиентов увеличилось с 1795 до 4100.",
+      "Средний и медианный scores выросли соответственно с 0.5669 и 0.5595 до 0.74 и 0.73.",
+      "90-й перцентиль score увеличился с 0.7737 до 0.93.",
+      "Показатель psi_score вырос с 0.0356 до 0.28."
+    ],
+    "business_interpretation": "Изменения указывают на возможное ухудшение качества кредитного портфеля.",
+    "possible_causes": [
+      "Сдвиг в составе клиентской базы или продуктов.",
+      "Проблемы с качеством данных или моделью оценки рисков."
+    ],
+    "recommended_checks": [
+      "Провести сегментный, продуктовый и DPD-анализ.",
+      "Оценить изменения в объеме и составе новых сегментов.",
+      "Сравнить текущую ситуацию с аналогичными периодами прошлого года."
+    ],
+    "event_classification": "potential_incident",
+    "risk_level": "high",
+    "confidence": "high"
+  },
+  {
+    "alert_group_id": "alert_group_004__data_quality_monitoring__cash_loan__31-60__base__collection_score_v1__all__empty_feature_vector",
+    "short_title": "Рост доли пустых feature vector",
+    "short_conclusion": "Наблюдается значительное увеличение доли пустых feature vector.",
+    "facts": [
+      "Доля пустых feature vector увеличилась с 0.0027 до 0.11.",
+      "Это изменение превышает установленный порог и классифицируется как критическое."
+    ],
+    "business_interpretation": "Увеличение доли пустых feature vector может повлиять на точность моделей и качество прогнозов.",
+    "possible_causes": [
+      "Проблемы с качеством исходных данных или их загрузкой.",
+      "Технологические сбои в процессе обработки данных."
+    ],
+    "recommended_checks": [
+      "Провести детальный анализ качества источников данных и процессов их загрузки.",
+      "Оценить влияние увеличения доли пустых feature vector на ключевые показатели моделей."
+    ],
+    "event_classification": "potential_incident",
+    "risk_level": "high",
+    "confidence": "high"
+  },
+  {
+    "alert_group_id": "alert_group_006__optimizer_monitoring__cash_loan__31-60__regular_flow__all__collection_contact_optimizer__optimizer_mass_reject",
+    "short_title": "Массовое ограничение коммуникаций оптимизатором",
+    "short_conclusion": "Наблюдается потенциальный инцидент в работе оптимизатора.",
+    "facts": [
+      "Доля отказов оптимизатора значительно увеличилась.",
+      "Количество одобренных коммуникаций резко сократилось.",
+      "Доля неизвестных коммуникаций также возросла."
+    ],
+    "business_interpretation": "Оптимизатор чрезмерно ограничивает возможности коммуникаций, что может негативно сказаться на сборе задолженности.",
+    "possible_causes": [
+      "Изменения в правилах или условиях работы оптимизатора.",
+      "Проблемы с доступными коммуникациями или их настройками.",
+      "Недостаточный бюджет или исчерпание лимитов оптимизатора."
+    ],
+    "recommended_checks": [
+      "Провести детальный аудит изменений в правилах и условиях оптимизатора.",
+      "Проверить доступные и настроенные каналы коммуникаций.",
+      "Оценить текущий бюджет и лимиты оптимизатора."
+    ],
+    "event_classification": "potential_incident",
+    "risk_level": "high",
+    "confidence": "high"
+  },
+  {
+    "alert_group_id": "alert_group_002__process_monitoring__credit_card__1-30__regular_flow__all__all__credit_card_batch_inflow",
+    "short_title": "Пакетное поступление кредитных карт подтверждено",
+    "short_conclusion": "Это ожидаемая особенность процесса.",
+    "facts": [
+      "Наблюдался резкий рост cnt_clients.",
+      "Доля product_share увеличилась.",
+      "Событие credit_card_batch_inflow подтверждено как ожидаемое.",
+      "Событие зарегистрировано в regular_flow сегменте."
+    ],
+    "business_interpretation": "Наблюдаемый скачок объема и доли кредитного продукта является ожидаемой особенностью процесса.",
+    "possible_causes": [],
+    "recommended_checks": [],
+    "event_classification": "expected_process_feature",
+    "risk_level": "low",
+    "confidence": "high"
+  },
+  {
+    "alert_group_id": "alert_group_003__model_monitoring__credit_card__31-60__base__collection_score_v1__all__model_gini_drop",
+    "short_title": "Снижение качества ранжирования модели",
+    "short_conclusion": "Заметно снизилось качество ранжирования модели.",
+    "facts": [
+      "Gini упал с 0.4261 до 0.31.",
+      "Снижение Gini составило 0.1161 и превысило порог значимого падения 0.07."
+    ],
+    "business_interpretation": "Модель стала менее эффективно разделять рискованные и безопасные клиенты.",
+    "possible_causes": [
+      "Изменение целевой ставки или состава клиентской базы.",
+      "Распределение скоринга изменилось.",
+      "Качество признаков ухудшилось."
+    ],
+    "recommended_checks": [
+      "Провести углубленный анализ изменений в составе клиентской базы.",
+      "Оценить распределение скоринга и его стабильность.",
+      "Проверить качество и полноту используемых признаков."
+    ],
+    "event_classification": "potential_incident",
+    "risk_level": "medium",
+    "confidence": "high"
+  },
+  {
+    "alert_group_id": "alert_group_001__process_monitoring__cash_loan__31-60__regular_flow__all__all__bank_unavailable_day",
+    "short_title": "Подтвержденный ЕДН для cash loan",
+    "short_conclusion": "Отклонение соответствует ожидаемому событию.",
+    "facts": [
+      "Объем клиентов упал до нуля.",
+      "Алерты зафиксированы в business zone volume.",
+      "Алерты зафиксированы в technical availability zone.",
+      "Событие bank unavailable day подтверждено как ожидаемое."
+    ],
+    "business_interpretation": "Наблюдаемое снижение объема клиентов является запланированным техническим событием.",
+    "possible_causes": [
+      "Плановый единый день недоступности банка."
+    ],
+    "recommended_checks": [
+      "Провести проверку восстановления потока на следующий рабочий день.",
+      "Исключить день ЕДН из стандартного анализа динамики."
+    ],
+    "event_classification": "expected_event",
+    "risk_level": "low",
+    "confidence": "high"
+  }
+]

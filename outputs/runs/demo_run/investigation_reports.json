@@ -1,0 +1,666 @@
+[
+  {
+    "alert_group_id": "alert_group_005__process_monitoring__cash_loan__61-90__new_high_risk__all__all__new_high_risk_segment",
+    "tool_plan": {
+      "alert_group_id": "alert_group_005__process_monitoring__cash_loan__61-90__new_high_risk__all__all__new_high_risk_segment",
+      "selected_tools": [
+        {
+          "tool_name": "check_target_rate_shift",
+          "reason": "Проверка изменения target_rate необходима для анализа аномального поведения целевой ставки.",
+          "expected_evidence": "Изменение target_rate между текущим и предыдущим периодом."
+        },
+        {
+          "tool_name": "check_score_distribution_shift",
+          "reason": "Анализ распределения scores важен для выявления изменений в составе клиентской базы.",
+          "expected_evidence": "Сдвиги в avg_score, median_score, p90_score и high_risk_share."
+        },
+        {
+          "tool_name": "check_product_mix_shift",
+          "reason": "Необходима проверка изменений в продуктовом составе для понимания влияния на risk profile.",
+          "expected_evidence": "Доля продукта в процессе monitoring изменилась."
+        },
+        {
+          "tool_name": "check_psi_shift",
+          "reason": "PSI-метрика помогает оценить стабильность модели и выявить возможные сдвиги в распределении признаков.",
+          "expected_evidence": "Изменения psi_score и psi_features."
+        },
+        {
+          "tool_name": "check_volume_shift",
+          "reason": "Необходимо понять влияние увеличения количества клиентов на общую картину.",
+          "expected_evidence": "Относительное изменение cnt_clients и cnt_scored."
+        }
+      ],
+      "stop_reason": ""
+    },
+    "tool_results": [
+      {
+        "tool_name": "check_target_rate_shift",
+        "status": "critical",
+        "finding": "target_rate изменился на 15.93 п.п.",
+        "evidence": {
+          "current": 0.39,
+          "previous": 0.2307,
+          "delta_abs": 0.1593,
+          "delta_rel": 0.690507
+        },
+        "supports_hypothesis": true
+      },
+      {
+        "tool_name": "check_score_distribution_shift",
+        "status": "critical",
+        "finding": "Распределение score имеет общий статус critical.",
+        "evidence": {
+          "avg_score": {
+            "current": 0.74,
+            "previous": 0.5669,
+            "delta_abs": 0.1731,
+            "delta_rel": 0.305345
+          },
+          "median_score": {
+            "current": 0.73,
+            "previous": 0.5595,
+            "delta_abs": 0.1705,
+            "delta_rel": 0.304736
+          },
+          "p90_score": {
+            "current": 0.93,
+            "previous": 0.7737,
+            "delta_abs": 0.1563,
+            "delta_rel": 0.202016
+          },
+          "high_risk_share": {
+            "current": 0.49,
+            "previous": 0.2221,
+            "delta_abs": 0.2679,
+            "delta_rel": 1.206213
+          }
+        },
+        "supports_hypothesis": true
+      },
+      {
+        "tool_name": "check_product_mix_shift",
+        "status": "ok",
+        "finding": "Доля продукта cash_loan изменилась на 4.02 п.п.",
+        "evidence": {
+          "product": "cash_loan",
+          "current_share": 0.767218,
+          "previous_share": 0.727044,
+          "delta_pp": 4.0174,
+          "current_product_clients": 16598,
+          "previous_product_clients": 13587,
+          "current_total_clients": 21634,
+          "previous_total_clients": 18688
+        },
+        "supports_hypothesis": false
+      },
+      {
+        "tool_name": "check_psi_shift",
+        "status": "critical",
+        "finding": "PSI-метрики имеют общий статус critical.",
+        "evidence": {
+          "psi_score": {
+            "current": 0.28,
+            "previous": 0.0356,
+            "delta_abs": 0.2444,
+            "delta_rel": 6.865169
+          },
+          "psi_features": {
+            "current": 0.0353,
+            "previous": 0.0503,
+            "delta_abs": -0.015,
+            "delta_rel": -0.298211
+          }
+        },
+        "supports_hypothesis": true
+      },
+      {
+        "tool_name": "check_volume_shift",
+        "status": "critical",
+        "finding": "Метрики объема имеют общий статус critical.",
+        "evidence": {
+          "cnt_clients": {
+            "current": 4100.0,
+            "previous": 1795.0,
+            "delta_abs": 2305.0,
+            "delta_rel": 1.284123
+          },
+          "cnt_scored": {
+            "current": 3950.0,
+            "previous": 1700.0,
+            "delta_abs": 2250.0,
+            "delta_rel": 1.323529
+          }
+        },
+        "supports_hypothesis": true
+      }
+    ],
+    "investigation_report": {
+      "alert_group_id": "alert_group_005__process_monitoring__cash_loan__61-90__new_high_risk__all__all__new_high_risk_segment",
+      "evidence_summary": [
+        "целевая ставка изменилась с 0.2307 до 0.39",
+        "доля high-risk клиентов увеличилась с 0.2221 до 0.49",
+        "общее количество клиентов выросло с 1795 до 4100",
+        "средний score повысился с 0.5669 до 0.74",
+        "медианный score вырос с 0.5595 до 0.73",
+        "90-й перцентиль score увеличился с 0.7737 до 0.93",
+        "psi_score вырос с 0.0356 до 0.28"
+      ],
+      "root_cause_hypothesis": "причина инцидента связана с изменением состава клиентской базы или проблемами качества данных и моделей оценки рисков",
+      "confidence": "high",
+      "recommended_actions": [
+        "провести детальный анализ изменений в составе клиентской базы и продуктах",
+        "оценить изменения в качестве данных и моделях оценки рисков",
+        "сравнить текущую ситуацию с аналогичными периодами прошлых лет"
+      ],
+      "needs_manual_review": false
+    }
+  },
+  {
+    "alert_group_id": "alert_group_004__data_quality_monitoring__cash_loan__31-60__base__collection_score_v1__all__empty_feature_vector",
+    "tool_plan": {
+      "alert_group_id": "alert_group_004__data_quality_monitoring__cash_loan__31-60__base__collection_score_v1__all__empty_feature_vector",
+      "selected_tools": [
+        {
+          "tool_name": "check_empty_feature_vector_growth",
+          "reason": "Проверка роста доли пустых feature vector, так как это ключевое событие alert group",
+          "expected_evidence": "Подтверждение роста доли пустых feature vector"
+        },
+        {
+          "tool_name": "check_missing_rate_growth",
+          "reason": "Анализ роста feature_missing_rate для оценки общего качества данных",
+          "expected_evidence": "Подтверждение роста feature_missing_rate"
+        },
+        {
+          "tool_name": "check_score_distribution_shift",
+          "reason": "Оценка изменений в распределении scores для выявления влияния пустых feature vector",
+          "expected_evidence": "Изменения в avg_score, median_score, p90_score и high_risk_share"
+        }
+      ],
+      "stop_reason": ""
+    },
+    "tool_results": [
+      {
+        "tool_name": "check_empty_feature_vector_growth",
+        "status": "critical",
+        "finding": "empty_feature_vector_share изменился на 10.73 п.п.",
+        "evidence": {
+          "current": 0.11,
+          "previous": 0.0027,
+          "delta_abs": 0.1073,
+          "delta_rel": 39.740741
+        },
+        "supports_hypothesis": true
+      },
+      {
+        "tool_name": "check_missing_rate_growth",
+        "status": "critical",
+        "finding": "Метрики пропусков имеют общий статус critical.",
+        "evidence": {
+          "feature_missing_rate": {
+            "current": 0.38,
+            "previous": 0.0156,
+            "delta_abs": 0.3644,
+            "delta_rel": 23.358974
+          },
+          "score_missing_rate": {
+            "current": 0.19,
+            "previous": 0.0112,
+            "delta_abs": 0.1788,
+            "delta_rel": 15.964286
+          }
+        },
+        "supports_hypothesis": true
+      },
+      {
+        "tool_name": "check_score_distribution_shift",
+        "status": "critical",
+        "finding": "Распределение score имеет общий статус critical.",
+        "evidence": {
+          "avg_score": {
+            "current": 0.68,
+            "previous": 0.4959,
+            "delta_abs": 0.1841,
+            "delta_rel": 0.371244
+          },
+          "median_score": {
+            "current": 0.67,
+            "previous": 0.4836,
+            "delta_abs": 0.1864,
+            "delta_rel": 0.385443
+          },
+          "p90_score": {
+            "current": 0.88,
+            "previous": 0.7295,
+            "delta_abs": 0.1505,
+            "delta_rel": 0.206306
+          },
+          "high_risk_share": {
+            "current": null,
+            "previous": null,
+            "delta_abs": null,
+            "delta_rel": null
+          }
+        },
+        "supports_hypothesis": true
+      }
+    ],
+    "investigation_report": {
+      "alert_group_id": "alert_group_004__data_quality_monitoring__cash_loan__31-60__base__collection_score_v1__all__empty_feature_vector",
+      "evidence_summary": [
+        "Доля пустых feature vector увеличилась на 10.73 п.п.",
+        "Доля пропущенных признаков увеличилась на 36.44 п.п.",
+        "Средний score увеличился на 18.41 п.п.",
+        "Медианный score увеличился на 18.64 п.п.",
+        "90-й перцентиль score увеличился на 15.05 п.п.",
+        "PSI признаков увеличился на 25.65 п.п."
+      ],
+      "root_cause_hypothesis": "Возможные причины включают проблемы с качеством исходных данных или технологические сбои в процессе их обработки.",
+      "confidence": "high",
+      "recommended_actions": [
+        "Провести детальный анализ качества источников данных и процессов их загрузки.",
+        "Оценить влияние увеличения доли пустых feature vector на ключевые показатели моделей."
+      ],
+      "needs_manual_review": false
+    }
+  },
+  {
+    "alert_group_id": "alert_group_006__optimizer_monitoring__cash_loan__31-60__regular_flow__all__collection_contact_optimizer__optimizer_mass_reject",
+    "tool_plan": {
+      "alert_group_id": "alert_group_006__optimizer_monitoring__cash_loan__31-60__regular_flow__all__collection_contact_optimizer__optimizer_mass_reject",
+      "selected_tools": [
+        {
+          "tool_name": "check_optimizer_reject_share",
+          "reason": "проверить reject_share и объемы одобренных и отклоненных решений оптимизатора",
+          "expected_evidence": "изменение reject_share и объемов одобренных и отклоненных решений оптимизатора"
+        },
+        {
+          "tool_name": "check_communication_mix_shift",
+          "reason": "проверить доли каналов коммуникаций и unknown_communication_share",
+          "expected_evidence": "изменения долей каналов коммуникаций и unknown_communication_share"
+        },
+        {
+          "tool_name": "check_volume_shift",
+          "reason": "проверить относительные изменения cnt_clients и cnt_scored",
+          "expected_evidence": "относительные изменения cnt_clients и cnt_scored"
+        }
+      ],
+      "stop_reason": "выбран минимальный набор инструментов из доступной whitelist"
+    },
+    "tool_results": [
+      {
+        "tool_name": "check_optimizer_reject_share",
+        "status": "critical",
+        "finding": "Метрики отказов оптимизатора имеют статус critical.",
+        "evidence": {
+          "reject_share": {
+            "current": 0.83,
+            "previous": 0.1949,
+            "delta_abs": 0.6351,
+            "delta_rel": 3.258594
+          },
+          "cnt_approved_for_communication": {
+            "current": 1350.0,
+            "previous": 7401.0,
+            "delta_abs": -6051.0,
+            "delta_rel": -0.817592
+          },
+          "cnt_rejected_by_optimizer": {
+            "current": 9100.0,
+            "previous": 2116.0,
+            "delta_abs": 6984.0,
+            "delta_rel": 3.300567
+          }
+        },
+        "supports_hypothesis": true
+      },
+      {
+        "tool_name": "check_communication_mix_shift",
+        "status": "critical",
+        "finding": "Микс коммуникаций имеет общий статус critical.",
+        "evidence": {
+          "communication_call_share": {
+            "current": 0.03,
+            "previous": 0.3033,
+            "delta_abs": -0.2733,
+            "delta_rel": -0.901088
+          },
+          "communication_visit_share": {
+            "current": 0.02,
+            "previous": 0.1551,
+            "delta_abs": -0.1351,
+            "delta_rel": -0.871051
+          },
+          "communication_sms_share": {
+            "current": 0.04,
+            "previous": 0.2494,
+            "delta_abs": -0.2094,
+            "delta_rel": -0.839615
+          },
+          "communication_waiting_share": {
+            "current": 0.02,
+            "previous": 0.1394,
+            "delta_abs": -0.1194,
+            "delta_rel": -0.856528
+          },
+          "communication_agency_share": {
+            "current": 0.01,
+            "previous": 0.0889,
+            "delta_abs": -0.0789,
+            "delta_rel": -0.887514
+          },
+          "unknown_communication_share": {
+            "current": 0.18,
+            "previous": 0.0096,
+            "delta_abs": 0.1704,
+            "delta_rel": 17.75
+          }
+        },
+        "supports_hypothesis": true
+      },
+      {
+        "tool_name": "check_volume_shift",
+        "status": "ok",
+        "finding": "Метрики объема имеют общий статус ok.",
+        "evidence": {
+          "cnt_clients": {
+            "current": 10831.0,
+            "previous": 10856.0,
+            "delta_abs": -25.0,
+            "delta_rel": -0.002303
+          },
+          "cnt_scored": {
+            "current": null,
+            "previous": null,
+            "delta_abs": null,
+            "delta_rel": null
+          }
+        },
+        "supports_hypothesis": false
+      }
+    ],
+    "investigation_report": {
+      "alert_group_id": "alert_group_006__optimizer_monitoring__cash_loan__31-60__regular_flow__all__collection_contact_optimizer__optimizer_mass_reject",
+      "evidence_summary": [
+        "Доля отказов оптимизатора значительно увеличилась с 0.1949 до 0.83.",
+        "Количество одобренных коммуникаций резко сократилось с 7401 до 1350.",
+        "Доля неизвестных коммуникаций возросла с 0.0096 до 0.18.",
+        "Микс коммуникаций показал критическое снижение всех типов коммуникаций.",
+        "Метрики отказов оптимизатора имеют статус critical.",
+        "Микс коммуникаций имеет общий статус critical."
+      ],
+      "root_cause_hypothesis": "Возможные причины инцидента включают изменения в правилах или условиях работы оптимизатора, проблемы с доступными коммуникациями или их настройками, а также недостаточный бюджет или исчерпание лимитов оптимизатора.",
+      "confidence": "high",
+      "recommended_actions": [
+        "Детально проанализировать изменения в правилах и условиях оптимизатора.",
+        "Провести проверку доступных и настроенных каналов коммуникаций.",
+        "Оценить текущий бюджет и лимиты оптимизатора."
+      ],
+      "needs_manual_review": false
+    }
+  },
+  {
+    "alert_group_id": "alert_group_002__process_monitoring__credit_card__1-30__regular_flow__all__all__credit_card_batch_inflow",
+    "tool_plan": {
+      "alert_group_id": "alert_group_002__process_monitoring__credit_card__1-30__regular_flow__all__all__credit_card_batch_inflow",
+      "selected_tools": [
+        {
+          "tool_name": "check_product_mix_shift",
+          "reason": "проверить изменение доли продукта после ожидаемого события credit_card_batch_inflow",
+          "expected_evidence": "изменение доли product_share после события"
+        },
+        {
+          "tool_name": "check_target_rate_shift",
+          "reason": "оценить влияние ожидаемого события на целевую ставку",
+          "expected_evidence": "изменения целевой ставки target_rate"
+        },
+        {
+          "tool_name": "check_volume_shift",
+          "reason": "проверить общие изменения объема после ожидаемого события",
+          "expected_evidence": "относительное изменение cnt_clients и cnt_scored"
+        }
+      ],
+      "stop_reason": "выбран минимальный набор инструментов, соответствующих ожидаемому событию"
+    },
+    "tool_results": [
+      {
+        "tool_name": "check_product_mix_shift",
+        "status": "critical",
+        "finding": "Доля продукта credit_card изменилась на 26.19 п.п.",
+        "evidence": {
+          "product": "credit_card",
+          "current_share": 0.527408,
+          "previous_share": 0.265511,
+          "delta_pp": 26.1897,
+          "current_product_clients": 15500,
+          "previous_product_clients": 5101,
+          "current_total_clients": 29389,
+          "previous_total_clients": 19212
+        },
+        "supports_hypothesis": true
+      },
+      {
+        "tool_name": "check_target_rate_shift",
+        "status": "warning",
+        "finding": "target_rate изменился на 4.02 п.п.",
+        "evidence": {
+          "current": 0.185,
+          "previous": 0.1448,
+          "delta_abs": 0.0402,
+          "delta_rel": 0.277624
+        },
+        "supports_hypothesis": true
+      },
+      {
+        "tool_name": "check_volume_shift",
+        "status": "critical",
+        "finding": "Метрики объема имеют общий статус critical.",
+        "evidence": {
+          "cnt_clients": {
+            "current": 15500.0,
+            "previous": 5101.0,
+            "delta_abs": 10399.0,
+            "delta_rel": 2.03862
+          },
+          "cnt_scored": {
+            "current": 14700.0,
+            "previous": 4875.0,
+            "delta_abs": 9825.0,
+            "delta_rel": 2.015385
+          }
+        },
+        "supports_hypothesis": true
+      }
+    ],
+    "investigation_report": {
+      "alert_group_id": "alert_group_002__process_monitoring__credit_card__1-30__regular_flow__all__all__credit_card_batch_inflow",
+      "evidence_summary": [
+        "Наблюдался резкий рост cnt_clients на 10399 единиц.",
+        "Доля product_share увеличилась на 26.19 процентных пунктов.",
+        "Событие credit_card_batch_inflow подтверждено как ожидаемое.",
+        "Событие зарегистрировано в regular_flow сегменте."
+      ],
+      "root_cause_hypothesis": "Скачок объема и доли credit_card объясняется ожидаемым пакетным поступлением портфеля.",
+      "confidence": "high",
+      "recommended_actions": [
+        "Контролировать завершение пакетной загрузки.",
+        "Анализировать метрики с учетом продуктового микса."
+      ],
+      "needs_manual_review": false
+    }
+  },
+  {
+    "alert_group_id": "alert_group_003__model_monitoring__credit_card__31-60__base__collection_score_v1__all__model_gini_drop",
+    "tool_plan": {
+      "alert_group_id": "alert_group_003__model_monitoring__credit_card__31-60__base__collection_score_v1__all__model_gini_drop",
+      "selected_tools": [
+        {
+          "tool_name": "check_target_rate_shift",
+          "reason": "проверить изменение target_rate между текущим и предыдущим периодом",
+          "expected_evidence": "изменение target_rate"
+        },
+        {
+          "tool_name": "check_psi_shift",
+          "reason": "оценить изменения psi_score и psi_features",
+          "expected_evidence": "изменения psi_score и psi_features"
+        },
+        {
+          "tool_name": "check_score_distribution_shift",
+          "reason": "проверить сдвиги avg_score, median_score, p90_score и high_risk_share",
+          "expected_evidence": "сдвиги в распределении scores"
+        }
+      ],
+      "stop_reason": "выбран минимальный необходимый набор инструментов для диагностики model_gini_drop"
+    },
+    "tool_results": [
+      {
+        "tool_name": "check_target_rate_shift",
+        "status": "critical",
+        "finding": "target_rate изменился на 5.27 п.п.",
+        "evidence": {
+          "current": 0.225,
+          "previous": 0.1723,
+          "delta_abs": 0.0527,
+          "delta_rel": 0.305862
+        },
+        "supports_hypothesis": true
+      },
+      {
+        "tool_name": "check_psi_shift",
+        "status": "warning",
+        "finding": "PSI-метрики имеют общий статус warning.",
+        "evidence": {
+          "psi_score": {
+            "current": 0.18,
+            "previous": 0.0304,
+            "delta_abs": 0.1496,
+            "delta_rel": 4.921053
+          },
+          "psi_features": {
+            "current": 0.0423,
+            "previous": 0.0464,
+            "delta_abs": -0.0041,
+            "delta_rel": -0.088362
+          }
+        },
+        "supports_hypothesis": true
+      },
+      {
+        "tool_name": "check_score_distribution_shift",
+        "status": "ok",
+        "finding": "Распределение score имеет общий статус ok.",
+        "evidence": {
+          "avg_score": {
+            "current": 0.514,
+            "previous": 0.5082,
+            "delta_abs": 0.0058,
+            "delta_rel": 0.011413
+          },
+          "median_score": {
+            "current": 0.4871,
+            "previous": 0.5068,
+            "delta_abs": -0.0197,
+            "delta_rel": -0.038871
+          },
+          "p90_score": {
+            "current": 0.7446,
+            "previous": 0.757,
+            "delta_abs": -0.0124,
+            "delta_rel": -0.01638
+          },
+          "high_risk_share": {
+            "current": 0.1946,
+            "previous": 0.1951,
+            "delta_abs": -0.0005,
+            "delta_rel": -0.002563
+          }
+        },
+        "supports_hypothesis": false
+      }
+    ],
+    "investigation_report": {
+      "alert_group_id": "alert_group_003__model_monitoring__credit_card__31-60__base__collection_score_v1__all__model_gini_drop",
+      "evidence_summary": [
+        "Gini упал с 0.4261 до 0.31.",
+        "Снижение Gini составило 0.1161 и превысило порог значимого падения 0.07.",
+        "target_rate изменился на 5.27 п.п.",
+        "PSI-метрики имеют общий статус warning.",
+        "Распределение score имеет общий статус ok."
+      ],
+      "root_cause_hypothesis": "Возможные причины снижения качества ранжирования модели включают изменение целевой ставки или состава клиентской базы, изменения в распределении скоринга и ухудшение качества признаков.",
+      "confidence": "high",
+      "recommended_actions": [
+        "Провести углубленный анализ изменений в составе клиентской базы.",
+        "Оценить распределение скоринга и его стабильность.",
+        "Проверить качество и полноту используемых признаков."
+      ],
+      "needs_manual_review": false
+    }
+  },
+  {
+    "alert_group_id": "alert_group_001__process_monitoring__cash_loan__31-60__regular_flow__all__all__bank_unavailable_day",
+    "tool_plan": {
+      "alert_group_id": "alert_group_001__process_monitoring__cash_loan__31-60__regular_flow__all__all__bank_unavailable_day",
+      "selected_tools": [
+        {
+          "tool_name": "check_known_event_calendar",
+          "reason": "Подтвердить, что bank_unavailable_day является ожидаемым событием согласно календарю работ",
+          "expected_evidence": "Дата bank_unavailable_day присутствует в known events calendar"
+        },
+        {
+          "tool_name": "check_volume_shift",
+          "reason": "Оценить относительное изменение cnt_clients и cnt_scored за период bank_unavailable_day",
+          "expected_evidence": "Относительное изменение cnt_clients и cnt_scored находится в пределах нормы для запланированного технического события"
+        }
+      ],
+      "stop_reason": ""
+    },
+    "tool_results": [
+      {
+        "tool_name": "check_known_event_calendar",
+        "status": "ok",
+        "finding": "Известное событие bank_unavailable_day подтверждено признаком is_expected_event=true.",
+        "evidence": {
+          "event_type": "bank_unavailable_day",
+          "is_expected_event": true,
+          "known_expected_event_type": true,
+          "event_date": "2026-04-21"
+        },
+        "supports_hypothesis": true
+      },
+      {
+        "tool_name": "check_volume_shift",
+        "status": "critical",
+        "finding": "Метрики объема имеют общий статус critical.",
+        "evidence": {
+          "cnt_clients": {
+            "current": 0.0,
+            "previous": 12245.0,
+            "delta_abs": -12245.0,
+            "delta_rel": -1.0
+          },
+          "cnt_scored": {
+            "current": 0.0,
+            "previous": 11687.0,
+            "delta_abs": -11687.0,
+            "delta_rel": -1.0
+          }
+        },
+        "supports_hypothesis": true
+      }
+    ],
+    "investigation_report": {
+      "alert_group_id": "alert_group_001__process_monitoring__cash_loan__31-60__regular_flow__all__all__bank_unavailable_day",
+      "evidence_summary": [
+        "Событие bank_unavailable_day подтверждено признаком is_expected_event=true.",
+        "Объем клиентов упал до нуля.",
+        "Метрики объема имеют общий статус critical."
+      ],
+      "root_cause_hypothesis": "Критичное отклонение объема объяснено подтвержденным ЕДН и не является инцидентом.",
+      "confidence": "high",
+      "recommended_actions": [
+        "Контролировать восстановление потока после завершения ЕДН."
+      ],
+      "needs_manual_review": false
+    }
+  }
+]

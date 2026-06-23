@@ -1,0 +1,128 @@
+[
+  {
+    "alert_group_id": "alert_group_005__process_monitoring__cash_loan__61-90__new_high_risk__all__all__new_high_risk_segment",
+    "query": "new_high_risk_segment new_high_risk_segment new_high_risk_segment new_high_risk_segment new_high_risk_segment new_high_risk_segment new_high_risk_segment new_high_risk_segment new_high_risk_segment new_high_risk_segment new_high_risk_segment new_high_risk_segment process_monitoring process_monitoring avg_score cnt_clients high_risk_share median_score p90_score psi_score target_rate drift portfolio_risk score_stability target_behavior volume target_rate target_rate_shift target_behavior Метрика target_rate изменилась с 0.2307 до 0.39; зафиксирован алерт critical. high_risk_share high_risk_share_growth portfolio_risk Доля high-risk клиентов изменилась с 0.2221 до 0.49; зафиксирован алерт critical. cnt_clients volume_spike volume Количество клиентов изменилось с 1795 до 4100; зафиксирован алерт critical. avg_score avg_score_shift score_stability Средний score изменился с 0.5669 до 0.74; зафиксирован алерт critical. median_score score_distribution_shift score_stability Медианный score изменился с 0.5595 до 0.73; зафиксирован алерт critical. p90_score score_distribution_shift score_stability 90-й перцентиль score изменился с 0.7737 до 0.93; зафиксирован алерт critical. psi_score psi_score_growth drift Метрика psi_score изменилась с 0.0356 до 0.28; зафиксирован алерт critical.",
+    "chunks": [
+      {
+        "source": "process_monitoring/high_risk_segment.md",
+        "score": 0.0682,
+        "text_preview": "# Новый рискованный сегмент\n\nСобытие `new_high_risk_segment` не является заранее ожидаемым. Одновременный рост\n`avg_score`, `median_score`, `p90_score`, `high_risk_share`, `target_rate` и\n`psi_score` может указывать на изменение состава входящего потока.\n\nДо диагностики событие следует считать `pote"
+      },
+      {
+        "source": "common/metrics_dictionary.md",
+        "score": 0.0565,
+        "text_preview": "# Словарь метрик\n\n- `cnt_clients` — количество клиентов в агрегированном срезе.\n- `cnt_scored` — количество клиентов, для которых рассчитан score.\n- `target_rate` — наблюдаемая доля целевого события.\n- `gini` — качество ранжирования модели; заметное падение требует диагностики.\n- `avg_score`, `media"
+      },
+      {
+        "source": "process_monitoring/anomaly_playbook.md",
+        "score": 0.0131,
+        "text_preview": "# Playbook мониторинга процесса\n\nПри скачке объема проверьте календарь известных событий, источник загрузки и\nизменение продуктового состава.\n\nПри одновременном сдвиге риска и объема сравните текущий поток с предыдущим\nпериодом по `product`, `dpd_bucket` и `segment`. Не интерпретируйте рост score ка"
+      }
+    ]
+  },
+  {
+    "alert_group_id": "alert_group_004__data_quality_monitoring__cash_loan__31-60__base__collection_score_v1__all__empty_feature_vector",
+    "query": "empty_feature_vector empty_feature_vector empty_feature_vector empty_feature_vector empty_feature_vector empty_feature_vector empty_feature_vector empty_feature_vector empty_feature_vector empty_feature_vector empty_feature_vector empty_feature_vector data_quality_monitoring data_quality_monitoring avg_score empty_feature_vector_share feature_missing_rate median_score p90_score psi_features data_quality drift score_stability empty_feature_vector_share empty_feature_vector_growth data_quality Доля пустых feature vector изменилась с 0.0027 до 0.11; зафиксирован алерт critical. avg_score avg_score_shift score_stability Средний score изменился с 0.4959 до 0.68; зафиксирован алерт critical. feature_missing_rate feature_missing_rate_growth data_quality Доля пропущенных признаков изменилась с 0.0156 до 0.38; зафиксирован алерт critical. median_score score_distribution_shift score_stability Медианный score изменился с 0.4836 до 0.67; зафиксирован алерт critical. p90_score score_distribution_shift score_stability 90-й перцентиль score изменился с 0.7295 до 0.88; зафиксирован алерт critical. psi_features psi_features_growth drift PSI признаков изменился с 0.0335 до 0.29; зафиксирован алерт critical.",
+    "chunks": [
+      {
+        "source": "data_quality_monitoring/feature_vector_quality.md",
+        "score": 0.0627,
+        "text_preview": "# Качество feature vector\n\nСобытие `empty_feature_vector` означает рост доли пустых или частично\nнезаполненных входных признаков. Если alert group подтверждает превышение\nпорогов по `empty_feature_vector_share` или `feature_missing_rate`, само\nотклонение классифицируется как `potential_incident` кач"
+      },
+      {
+        "source": "common/metrics_dictionary.md",
+        "score": 0.0589,
+        "text_preview": "# Словарь метрик\n\n- `cnt_clients` — количество клиентов в агрегированном срезе.\n- `cnt_scored` — количество клиентов, для которых рассчитан score.\n- `target_rate` — наблюдаемая доля целевого события.\n- `gini` — качество ранжирования модели; заметное падение требует диагностики.\n- `avg_score`, `media"
+      },
+      {
+        "source": "data_quality_monitoring/anomaly_playbook.md",
+        "score": 0.0119,
+        "text_preview": "# Playbook качества данных\n\nПри росте missing rate:\n\n- локализовать пропуски по источникам и признакам;\n- сравнить время обновления витрин;\n- проверить объем пустых feature vector;\n- оценить влияние пропусков на score;\n- проверить восстановление после исправления загрузки.\n\nПричину следует считать п"
+      }
+    ]
+  },
+  {
+    "alert_group_id": "alert_group_006__optimizer_monitoring__cash_loan__31-60__regular_flow__all__collection_contact_optimizer__optimizer_mass_reject",
+    "query": "optimizer_mass_reject optimizer_mass_reject optimizer_mass_reject optimizer_mass_reject optimizer_mass_reject optimizer_mass_reject optimizer_mass_reject optimizer_mass_reject optimizer_mass_reject optimizer_mass_reject optimizer_mass_reject optimizer_mass_reject optimizer_monitoring optimizer_monitoring cnt_approved_for_communication reject_share unknown_communication_share data_quality optimizer_behavior reject_share reject_share_growth optimizer_behavior Доля отказов оптимизатора изменилась с 0.1949 до 0.83; зафиксирован алерт critical. cnt_approved_for_communication approved_communication_drop optimizer_behavior Количество одобренных коммуникаций изменилось с 7401 до 1350; зафиксирован алерт critical. unknown_communication_share unknown_communication_share_growth data_quality Доля неизвестных коммуникаций изменилась с 0.0096 до 0.18; зафиксирован алерт critical.",
+    "chunks": [
+      {
+        "source": "optimizer_monitoring/optimizer_rules.md",
+        "score": 0.0727,
+        "text_preview": "# Правила бизнес-оптимизатора\n\nСобытие `optimizer_mass_reject` означает массовый рост решений reject или\nno action одновременно с падением `cnt_approved_for_communication`. Это не\nявляется штатным режимом и классифицируется как `potential_incident`.\n\nВозможные причины: изменение правил, исчерпание б"
+      },
+      {
+        "source": "common/metrics_dictionary.md",
+        "score": 0.057,
+        "text_preview": "# Словарь метрик\n\n- `cnt_clients` — количество клиентов в агрегированном срезе.\n- `cnt_scored` — количество клиентов, для которых рассчитан score.\n- `target_rate` — наблюдаемая доля целевого события.\n- `gini` — качество ранжирования модели; заметное падение требует диагностики.\n- `avg_score`, `media"
+      },
+      {
+        "source": "optimizer_monitoring/anomaly_playbook.md",
+        "score": 0.0136,
+        "text_preview": "# Playbook оптимизатора\n\nПри массовых отказах:\n\n- проверить версии и условия бизнес-правил;\n- проверить бюджетные и контактные ограничения;\n- проверить входные признаки оптимизатора;\n- проверить справочники доступных коммуникаций;\n- сравнить reject share по каналам, продуктам и сегментам.\n\nМассовое "
+      }
+    ]
+  },
+  {
+    "alert_group_id": "alert_group_002__process_monitoring__credit_card__1-30__regular_flow__all__all__credit_card_batch_inflow",
+    "query": "credit_card_batch_inflow credit_card_batch_inflow credit_card_batch_inflow credit_card_batch_inflow credit_card_batch_inflow credit_card_batch_inflow credit_card_batch_inflow credit_card_batch_inflow credit_card_batch_inflow credit_card_batch_inflow credit_card_batch_inflow credit_card_batch_inflow process_monitoring process_monitoring cnt_clients product_share target_rate portfolio_mix target_behavior volume cnt_clients volume_spike volume Количество клиентов изменилось с 5101 до 15500; зафиксирован алерт critical. target_rate target_rate_shift target_behavior Метрика target_rate изменилась с 0.1448 до 0.185; зафиксирован алерт warning. product_share credit_card_inflow_spike portfolio_mix Доля продукта credit_card в потоке изменилась с 0.2655 до 0.5274; зафиксирован алерт critical.",
+    "chunks": [
+      {
+        "source": "process_monitoring/credit_card_inflow.md",
+        "score": 0.0648,
+        "text_preview": "# Неритмичное поступление credit card\n\nСобытие `credit_card_batch_inflow` означает пакетное поступление портфеля\nкредитных карт. Для подтвержденной даты загрузки это ожидаемая особенность\nпроцесса, `expected_process_feature`.\n\nТипичные признаки: рост `cnt_clients`, увеличение `product_share` и возмо"
+      },
+      {
+        "source": "common/known_events.md",
+        "score": 0.047,
+        "text_preview": "# Известные события мониторинга\n\n## bank_unavailable_day\n\nЕдиный день недоступности банка (ЕДН) является плановым технологическим\nсобытием, если дата подтверждена календарем работ и во входных данных установлен\nпризнак `is_expected_event=true`.\n\nВ день ЕДН допустимы нулевые `cnt_clients`, `cnt_score"
+      },
+      {
+        "source": "common/metrics_dictionary.md",
+        "score": 0.0447,
+        "text_preview": "# Словарь метрик\n\n- `cnt_clients` — количество клиентов в агрегированном срезе.\n- `cnt_scored` — количество клиентов, для которых рассчитан score.\n- `target_rate` — наблюдаемая доля целевого события.\n- `gini` — качество ранжирования модели; заметное падение требует диагностики.\n- `avg_score`, `media"
+      }
+    ]
+  },
+  {
+    "alert_group_id": "alert_group_003__model_monitoring__credit_card__31-60__base__collection_score_v1__all__model_gini_drop",
+    "query": "model_gini_drop model_gini_drop model_gini_drop model_gini_drop model_gini_drop model_gini_drop model_gini_drop model_gini_drop model_gini_drop model_gini_drop model_gini_drop model_gini_drop model_monitoring model_monitoring gini psi_score target_rate drift model_quality target_behavior gini gini_drop model_quality Метрика Gini изменилась с 0.4261 до 0.31; зафиксирован алерт critical. target_rate target_rate_shift target_behavior Метрика target_rate изменилась с 0.1723 до 0.225; зафиксирован алерт critical. psi_score psi_score_growth drift Метрика psi_score изменилась с 0.0304 до 0.18; зафиксирован алерт warning.",
+    "chunks": [
+      {
+        "source": "model_monitoring/model_quality.md",
+        "score": 0.0907,
+        "text_preview": "# Качество модели\n\nСобытие `model_gini_drop` означает существенное снижение `gini`. Оно не является\nожидаемым и классифицируется как `potential_incident` до завершения диагностики.\n\nПадение Gini может быть связано с изменением target rate, состава потока,\nраспределения score или качества признаков, "
+      },
+      {
+        "source": "common/metrics_dictionary.md",
+        "score": 0.0158,
+        "text_preview": "# Словарь метрик\n\n- `cnt_clients` — количество клиентов в агрегированном срезе.\n- `cnt_scored` — количество клиентов, для которых рассчитан score.\n- `target_rate` — наблюдаемая доля целевого события.\n- `gini` — качество ранжирования модели; заметное падение требует диагностики.\n- `avg_score`, `media"
+      },
+      {
+        "source": "common/known_events.md",
+        "score": 0.0065,
+        "text_preview": "# Известные события мониторинга\n\n## bank_unavailable_day\n\nЕдиный день недоступности банка (ЕДН) является плановым технологическим\nсобытием, если дата подтверждена календарем работ и во входных данных установлен\nпризнак `is_expected_event=true`.\n\nВ день ЕДН допустимы нулевые `cnt_clients`, `cnt_score"
+      }
+    ]
+  },
+  {
+    "alert_group_id": "alert_group_001__process_monitoring__cash_loan__31-60__regular_flow__all__all__bank_unavailable_day",
+    "query": "bank_unavailable_day bank_unavailable_day bank_unavailable_day bank_unavailable_day bank_unavailable_day bank_unavailable_day bank_unavailable_day bank_unavailable_day bank_unavailable_day bank_unavailable_day bank_unavailable_day bank_unavailable_day process_monitoring process_monitoring cnt_clients null_metrics_rate technical_availability volume cnt_clients volume_drop volume Количество клиентов изменилось с 12245 до 0; зафиксирован алерт critical. null_metrics_rate null_metrics_spike technical_availability Доля незаполненных ключевых метрик изменилась с 0 до 0.6; зафиксирован алерт critical.",
+    "chunks": [
+      {
+        "source": "common/metrics_dictionary.md",
+        "score": 0.0416,
+        "text_preview": "# Словарь метрик\n\n- `cnt_clients` — количество клиентов в агрегированном срезе.\n- `cnt_scored` — количество клиентов, для которых рассчитан score.\n- `target_rate` — наблюдаемая доля целевого события.\n- `gini` — качество ранжирования модели; заметное падение требует диагностики.\n- `avg_score`, `media"
+      },
+      {
+        "source": "common/known_events.md",
+        "score": 0.038,
+        "text_preview": "# Известные события мониторинга\n\n## bank_unavailable_day\n\nЕдиный день недоступности банка (ЕДН) является плановым технологическим\nсобытием, если дата подтверждена календарем работ и во входных данных установлен\nпризнак `is_expected_event=true`.\n\nВ день ЕДН допустимы нулевые `cnt_clients`, `cnt_score"
+      },
+      {
+        "source": "process_monitoring/high_risk_segment.md",
+        "score": 0.0077,
+        "text_preview": "# Новый рискованный сегмент\n\nСобытие `new_high_risk_segment` не является заранее ожидаемым. Одновременный рост\n`avg_score`, `median_score`, `p90_score`, `high_risk_share`, `target_rate` и\n`psi_score` может указывать на изменение состава входящего потока.\n\nДо диагностики событие следует считать `pote"
+      }
+    ]
+  }
+]
